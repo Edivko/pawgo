@@ -10,6 +10,86 @@ function showScreen(id) {
   }
 }
 
+// --------- MASCOTAS (MODELO SIMPLE EN MEMORIA) ---------
+// Lista de mascotas: empieza vacía
+const pets = [];
+
+const petsContainer = document.getElementById("pets-container");
+
+function renderPets() {
+  if (!petsContainer) return;
+
+  petsContainer.innerHTML = "";
+
+  pets.forEach(pet => {
+    const row = document.createElement("div");
+    row.className = "pet-row";
+
+    row.innerHTML = `
+      <span class="pet-icon">🐶</span>
+      <button class="pet-chip">${pet.name}</button>
+      <button class="icon-round">⚙️</button>
+    `;
+
+    petsContainer.appendChild(row);
+  });
+}
+
+// --------- MASCOTAS PARA AGENDAR PASEO ---------
+
+const petsScheduleContainer = document.getElementById("pets-schedule-container");
+const petsVipContainer = document.getElementById("pets-vip-container");
+
+function renderPetsSchedule() {
+  if (!petsScheduleContainer) return;
+
+  petsScheduleContainer.innerHTML = "";
+
+  if (pets.length === 0) {
+    petsScheduleContainer.innerHTML = `<p style="font-size:13px;color:#666;">No tienes mascotas registradas.</p>`;
+    return;
+  }
+
+  pets.forEach(pet => {
+    const row = document.createElement("div");
+    row.className = "pet-row";
+
+    row.innerHTML = `
+      <span class="pet-icon">🐶</span>
+      <button class="pet-chip">${pet.name}</button>
+    `;
+
+    petsScheduleContainer.appendChild(row);
+  });
+}
+
+function renderPetsVip() {
+  if (!petsVipContainer) return;
+
+  petsVipContainer.innerHTML = "";
+
+  if (pets.length === 0) {
+    petsVipContainer.innerHTML = `<p style="font-size:13px;color:#666;">No tienes mascotas registradas.</p>`;
+    return;
+  }
+
+  pets.forEach(pet => {
+    const row = document.createElement("div");
+    row.className = "pet-row";
+
+    row.innerHTML = `
+      <span class="pet-icon">🐶</span>
+      <button class="pet-chip">${pet.name}</button>
+    `;
+
+    petsVipContainer.appendChild(row);
+  });
+}
+
+
+// Llamamos una vez al cargar para que aparezcan Ostin y Kira
+renderPets();
+
 // Navegación con data-next (botones de continuar / back)
 document.addEventListener("click", (event) => {
   const btn = event.target.closest("[data-next]");
@@ -19,8 +99,19 @@ document.addEventListener("click", (event) => {
   if (nextId) {
     event.preventDefault();
     showScreen(nextId);
+
+    // 👇 Cuando el usuario entra a "Agendar Paseo"
+    if (nextId === "screen-schedule-walk") {
+      renderPetsSchedule();
+    }
+
+    // 👇 Cuando el usuario entra a "VIP Pets"
+    if (nextId === "screen-vip-pets") {
+      renderPetsVip();
+    }
   }
 });
+
 
 // ---------- FORMULARIOS ----------
 
@@ -69,29 +160,29 @@ formLogin.addEventListener("submit", (e) => {
 });
 
 // 3) Registrar mascota
+// 3) Registrar mascota
 const formPetRegister = document.getElementById("form-pet-register");
 
 formPetRegister.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const nombreMascota = formPetRegister.nombreMascota.value.trim();
+  
   if (!nombreMascota) {
     alert("Ingresa el nombre de la mascota.");
     formPetRegister.nombreMascota.focus();
     return;
   }
 
-  alert("Mascota registrada (ejemplo).");
+  // Agregar mascota a la lista
+  pets.push({
+    id: Date.now(),
+    name: nombreMascota
+  });
+
+  formPetRegister.reset();
+
+  // Volver al home y redibujar la lista de mascotas
   showScreen("screen-home");
-});
-
-// 4) VIP paseo
-const formVipWalk = document.getElementById("form-vip-walk");
-
-formVipWalk.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  // Podrías validar campos aquí si quieres
-  alert("Paseo agendado (ejemplo).");
-  showScreen("screen-home");
+  renderPets();
 });

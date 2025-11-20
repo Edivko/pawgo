@@ -187,22 +187,18 @@
 
         <div class="screen-content home-content">
           <div class="home-welcome-row">
-            <h2 class="home-welcome">Bienvenido José</h2>
+            <h2 class="home-welcome">
+              Bienvenido <span id="welcome-username">Usuario</span>
+            </h2>
             <div class="icon-btn person">👤</div>
           </div>
 
           <!-- Mascotas -->
           <div class="pets-list">
-            <div class="pet-row">
-              <span class="pet-icon">🐶</span>
-              <button class="pet-chip">Ostin</button>
-              <button class="icon-round">⚙️</button>
-            </div>
-            <div class="pet-row">
-              <span class="pet-icon">🐶</span>
-              <button class="pet-chip">Kira</button>
-              <button class="icon-round">⚙️</button>
-            </div>
+            <!-- AQUÍ JS va a dibujar las tarjetas de las mascotas -->
+            <div id="pets-container"></div>
+
+            <!-- fila para agregar nueva mascota -->
             <div class="add-pet-row">
               <input
                 type="text"
@@ -210,6 +206,7 @@
                 class="input-line"
                 readonly
               />
+              <!-- sigue enviando al formulario de registrar mascota -->
               <button class="icon-round" data-next="screen-pet-register">＋</button>
             </div>
           </div>
@@ -218,17 +215,20 @@
           <div class="address-row">
             <input
               type="text"
+              id="home-address"
               value="Colima 242, Roma Norte, Cuauhtémoc, CDMX"
               class="input-line"
-              readonly
             />
             <button class="icon-round">📍</button>
           </div>
 
           <!-- Mapa -->
           <div class="map-card">
-            <!-- Pon aquí tu mapa real; por ahora imagen de ejemplo -->
-            <img src="img/map-placeholder.png" alt="Mapa" />
+            <iframe
+              id="map-iframe"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
           </div>
 
           <!-- Agendar paseo -->
@@ -312,23 +312,15 @@
           <h2 class="screen-title">Agendar paseo</h2>
           <p class="subtitle-center">Seleccionar mascota que requiere paseo</p>
 
-          <div class="pets-horizontal">
-            <div class="pet-row">
-              <span class="pet-icon">🐶</span>
-              <button class="pet-chip">Ostin</button>
-            </div>
-            <div class="pet-row">
-              <span class="pet-icon">🐶</span>
-              <button class="pet-chip">Kira</button>
-            </div>
-          </div>
+          <!-- Contenedor para las mascotas a seleccionar en Agendar Paseo -->
+          <div class="pets-horizontal" id="pets-schedule-container"></div>
 
           <p class="subtitle-center">Seleccionar día</p>
 
-          <div class="calendar-card">
-            <!-- Reemplaza por un datepicker real si quieres -->
-            <img src="img/calendar-nov-2025.png" alt="Calendario" />
-          </div>
+<div class="calendar-card">
+  <input type="date" id="walk-date" class="input-line" />
+</div>
+
 
           <button class="btn btn-primary" data-next="screen-vip-pets">
             Continuar
@@ -347,16 +339,8 @@
           <h2 class="screen-title">Agendar paseo</h2>
           <p class="subtitle-center">Seleccionar mascota que requiere paseo</p>
 
-          <div class="pets-horizontal">
-            <div class="pet-row">
-              <span class="pet-icon">🐶</span>
-              <button class="pet-chip">Ostin</button>
-            </div>
-            <div class="pet-row">
-              <span class="pet-icon">🐶</span>
-              <button class="pet-chip">Kira</button>
-            </div>
-          </div>
+          <!-- Contenedor para las mascotas a seleccionar en VIP Pets -->
+          <div class="pets-horizontal" id="pets-vip-container"></div>
 
           <form id="form-vip-walk" novalidate>
             <label class="field">
@@ -399,10 +383,33 @@
           </form>
         </div>
       </section>
+      <!-- PANTALLA 9: PASEO CONFIRMADO -->
+      <section id="screen-walk-confirmed" class="screen">
+        <header class="screen-header">
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content confirm-content">
+          <div class="confirm-icon">✅</div>
+          <h2 class="screen-title">Paseo confirmado</h2>
+          <p id="confirmed-text" class="confirm-text">
+            Tu paseo ha sido agendado correctamente.
+          </p>
+
+          <button class="btn btn-primary" data-next="screen-home">
+            Volver al inicio
+          </button>
+        </div>
+      </section>
 
     </main>
   </div>
 
-  <script src="script.js"></script>
+  <!-- JS modular -->
+  <script src="state.js"></script>
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="pets.js"></script>
+  <script src="map.js"></script>
 </body>
 </html>
