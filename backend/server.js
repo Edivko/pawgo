@@ -6,15 +6,15 @@ const cors = require('cors');
 const app = express();
 const PORT = 3000;
 
-// permitir peticiones desde tu HTML
+// permitir peticiones desde HTML
 app.use(cors());
 app.use(express.json());
 
 // conexión a MySQL
 const pool = mysql.createPool({
   host: 'localhost',
-  user: 'root',            // TU usuario de MySQL
-  password: 'TU_PASSWORD', // TU contraseña de MySQL
+  user: 'root',            
+  password: 'mauri123', 
   database: 'pawgo',
   port: 3306,
 });
