@@ -1,6 +1,10 @@
 // pets.js
 // Manejo de mascotas en Home, Agendar paseo y VIP Pets
 
+// Se asume que existen variables globales en otro archivo:
+//   let pets = [];           // lista de mascotas
+//   let selectedPetId = null;
+
 // Contenedores de UI
 const petsContainer = document.getElementById("pets-container");
 const petsScheduleContainer = document.getElementById("pets-schedule-container");
@@ -12,7 +16,7 @@ function renderPets() {
 
   petsContainer.innerHTML = "";
 
-  if (pets.length === 0) {
+  if (!pets || pets.length === 0) {
     const emptyMsg = document.createElement("p");
     emptyMsg.textContent = "Aún no tienes mascotas registradas.";
     emptyMsg.style.fontSize = "13px";
@@ -42,13 +46,13 @@ function renderPetsSchedule() {
 
   petsScheduleContainer.innerHTML = "";
 
-  if (pets.length === 0) {
+  if (!pets || pets.length === 0) {
     petsScheduleContainer.innerHTML =
       `<p style="font-size:13px;color:#666;">No tienes mascotas registradas.</p>`;
     return;
   }
 
-  pets.forEach(pet => {
+  pets.forEach((pet) => {
     const isSelected = pet.id === selectedPetId;
 
     const row = document.createElement("div");
@@ -56,7 +60,7 @@ function renderPetsSchedule() {
 
     row.innerHTML = `
       <span class="pet-icon">🐶</span>
-      <button class="pet-chip pet-chip-selectable ${isSelected ? 'selected' : ''}"
+      <button class="pet-chip pet-chip-selectable ${isSelected ? "selected" : ""}"
               data-pet-id="${pet.id}">
         ${pet.name}
       </button>
@@ -66,20 +70,19 @@ function renderPetsSchedule() {
   });
 }
 
-
 // -------- RENDER EN VIP PETS --------
 function renderPetsVip() {
   if (!petsVipContainer) return;
 
   petsVipContainer.innerHTML = "";
 
-  if (pets.length === 0) {
+  if (!pets || pets.length === 0) {
     petsVipContainer.innerHTML =
       `<p style="font-size:13px;color:#666;">No tienes mascotas registradas.</p>`;
     return;
   }
 
-  pets.forEach(pet => {
+  pets.forEach((pet) => {
     const isSelected = pet.id === selectedPetId;
 
     const row = document.createElement("div");
@@ -87,7 +90,7 @@ function renderPetsVip() {
 
     row.innerHTML = `
       <span class="pet-icon">🐶</span>
-      <button class="pet-chip pet-chip-selectable ${isSelected ? 'selected' : ''}"
+      <button class="pet-chip pet-chip-selectable ${isSelected ? "selected" : ""}"
               data-pet-id="${pet.id}">
         ${pet.name}
       </button>
@@ -97,6 +100,36 @@ function renderPetsVip() {
   });
 }
 
+// -------- CARGAR MASCOTAS DESDE EL BACKEND --------
+async function loadPetsFromBackend() {
+  const userId = localStorage.getItem("pawgoUserId");
+  if (!userId) return;
+
+  try {
+    const resp = await apiGetMascotas(userId);
+    if (!resp.ok) {
+      console.warn(resp.message || "No se pudieron cargar mascotas");
+      return;
+    }
+
+    pets = (resp.mascotas || []).map((row) => ({
+      id: row.id_mascota,
+      name: row.nombre,
+      size: row.tamano,
+      raw: row,
+    }));
+
+    renderPets();
+    renderPetsSchedule();
+    renderPetsVip();
+  } catch (err) {
+    console.error("Error cargando mascotas:", err);
+  }
+}
+
+async function refreshPetsUI() {
+  await loadPetsFromBackend();
+}
 
 // -------- SELECCIONAR MASCOTA (chips clickeables) --------
 document.addEventListener("click", (e) => {
@@ -106,7 +139,6 @@ document.addEventListener("click", (e) => {
   const petId = Number(chip.dataset.petId);
   selectedPetId = petId;
 
-  // Volvemos a dibujar listas donde aparece la selección
   renderPetsSchedule();
   renderPetsVip();
 });
@@ -118,7 +150,17 @@ if (formPetRegister) {
   formPetRegister.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const userId = localStorage.getItem("pawgoUserId");
+    if (!userId) {
+      alert("Primero inicia sesión o regístrate.");
+      return;
+    }
+
     const nombreMascota = formPetRegister.nombreMascota.value.trim();
+    const raza = formPetRegister.raza.value.trim();
+    const edad = formPetRegister.edad.value.trim();
+    const peso = formPetRegister.peso.value.trim();
+    const tamano = formPetRegister.tamano.value.trim();
 
     if (!nombreMascota) {
       alert("Ingresa el nombre de la mascota.");
@@ -126,46 +168,64 @@ if (formPetRegister) {
       return;
     }
 
-    // En un futuro, mandar al backend:
-    let newPet = {
-      name: nombreMascota,
-      // aquí podrías agregar raza, edad, peso, etc.
-    };
-
     try {
-      const resp = await apiCreatePet(newPet);
-      if (resp && resp.id) {
-        newPet.id = resp.id;
+      const resp = await apiCreatePet({
+        id_dueno: userId,
+        nombreMascota,
+        raza,
+        edad,
+        peso,
+        tamano,
+      });
+
+      if (!resp.ok) {
+        alert(resp.message || "Error al registrar mascota.");
+        return;
+      }
+
+      const newPet = {
+        id: resp.id_mascota || Date.now(),
+        name: nombreMascota,
+        size: tamano,
+      };
+
+      pets.push(newPet);
+      selectedPetId = newPet.id;
+
+      formPetRegister.reset();
+
+      renderPets();
+      renderPetsSchedule();
+      renderPetsVip();
+
+      if (typeof showScreen === "function") {
+        showScreen("screen-home");
       } else {
-        // fallback si el backend no devuelve id
-        newPet.id = Date.now();
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById("screen-home")?.classList.add("active");
       }
     } catch (err) {
       console.error(err);
-      // fallback local
-      newPet.id = Date.now();
+      alert("Error conectando con el servidor.");
     }
-
-    pets.push(newPet);
-
-    // Mascota recién agregada queda seleccionada por defecto
-    selectedPetId = newPet.id;
-
-    formPetRegister.reset();
-
-    // Volver al home y redibujar
-    showScreen("screen-home");
-    renderPets();
   });
 }
+
 // -------- FORMULARIO: CONFIRMAR PASEO VIP --------
 const formVipWalk = document.getElementById("form-vip-walk");
 
 if (formVipWalk) {
-  formVipWalk.addEventListener("submit", (e) => {
+  formVipWalk.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Debe haber una mascota seleccionada
+    const userId = localStorage.getItem("pawgoUserId");
+    if (!userId) {
+      alert("Primero inicia sesión o regístrate.");
+      return;
+    }
+
     if (!selectedPetId) {
       alert("Selecciona una mascota para agendar el paseo.");
       return;
@@ -173,26 +233,62 @@ if (formVipWalk) {
 
     const pet = pets.find((p) => p.id === selectedPetId);
 
-    // Tomar la fecha si existe el input de calendario
     const dateInput = document.getElementById("walk-date");
     const dateValue = dateInput ? dateInput.value : "";
-
-    const confirmedTextEl = document.getElementById("confirmed-text");
-    if (confirmedTextEl) {
-      let text = "Tu paseo ha sido agendado correctamente.";
-      if (pet || dateValue) {
-        text = "Hemos agendado el paseo";
-        if (pet) text += ` para ${pet.name}`;
-        if (dateValue) text += ` el ${dateValue}`;
-        text += ".";
-      }
-      confirmedTextEl.textContent = text;
+    if (!dateValue) {
+      alert("Selecciona la fecha del paseo.");
+      return;
     }
 
-    // Opcional: limpiar formulario VIP
-    formVipWalk.reset();
+    const diaVip = formVipWalk.diaVip.value; // mañana / tarde / ""
 
-    // Ir a la pantalla de confirmación
-    showScreen("screen-walk-confirmed");
+    try {
+      const resp = await apiCreateReserva({
+        id_cliente: userId,
+        id_mascota: selectedPetId,
+        fecha: dateValue,
+        diaVip,
+      });
+
+      if (!resp.ok) {
+        alert(resp.message || "Error al agendar paseo.");
+        return;
+      }
+
+      const confirmedTextEl = document.getElementById("confirmed-text");
+      if (confirmedTextEl) {
+        let text = "Tu paseo ha sido agendado correctamente.";
+        if (pet || dateValue) {
+          text = "Hemos agendado el paseo";
+          if (pet) text += ` para ${pet.name}`;
+          if (dateValue) text += ` el ${dateValue}`;
+          if (diaVip === "manana") text += " por la mañana";
+          else if (diaVip === "tarde") text += " por la tarde";
+          text += ".";
+        }
+        confirmedTextEl.textContent = text;
+      }
+
+      formVipWalk.reset();
+
+      if (typeof showScreen === "function") {
+        showScreen("screen-walk-confirmed");
+      } else {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        document
+          .getElementById("screen-walk-confirmed")
+          ?.classList.add("active");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error conectando con el servidor.");
+    }
   });
 }
+
+// -------- Al cargar la página, traer mascotas de la BD --------
+document.addEventListener("DOMContentLoaded", () => {
+  refreshPetsUI();
+});
