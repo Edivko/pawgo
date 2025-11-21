@@ -1,29 +1,46 @@
 // api.js
-// Aquí centralizarás TODAS las llamadas al backend cuando lo tengas.
-// Por ahora son "stubs" para que puedas reemplazarlos fácilmente después.
+const API_URL = "http://localhost:3000";
 
+// -------- USUARIOS --------
 async function apiRegisterUser(userData) {
-  // TODO: reemplazar por fetch al backend
-  console.log("apiRegisterUser (demo)", userData);
-  return { ok: true, id: Date.now(), ...userData };
+  const resp = await fetch(`${API_URL}/api/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+  return resp.json();  // { ok, userId, nombre, message? }
 }
 
 async function apiLogin(credentials) {
-  // TODO: reemplazar por fetch al backend
-  console.log("apiLogin (demo)", credentials);
-  // Simulamos usuario devuelto
-  return {
-    ok: true,
-    token: "demo-token",
-    user: {
-      name: credentials.email.split("@")[0] || "Usuario",
-      email: credentials.email,
-    },
-  };
+  const resp = await fetch(`${API_URL}/api/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+  return resp.json();  // { ok, userId, nombre, message? }
+}
+
+// -------- MASCOTAS --------
+async function apiGetMascotas(userId) {
+  const resp = await fetch(`${API_URL}/api/mascotas/${userId}`);
+  return resp.json();  // { ok, mascotas: [...] }
 }
 
 async function apiCreatePet(petData) {
-  // TODO: reemplazar por fetch al backend
-  console.log("apiCreatePet (demo)", petData);
-  return { ok: true, id: Date.now(), ...petData };
+  const resp = await fetch(`${API_URL}/api/mascotas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(petData),
+  });
+  return resp.json();  // { ok, id_mascota, message? }
+}
+
+// -------- RESERVAS (PASEOS) --------
+async function apiCreateReserva(data) {
+  const resp = await fetch(`${API_URL}/api/reservas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return resp.json();  // { ok, id_reserva, id_disponibilidad, message? }
 }
