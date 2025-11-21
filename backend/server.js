@@ -1,4 +1,3 @@
-// backend/server.js
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
@@ -6,15 +5,14 @@ const cors = require('cors');
 const app = express();
 const PORT = 3000;
 
-// permitir peticiones desde HTML
 app.use(cors());
 app.use(express.json());
 
-// conexión a MySQL
+// Conexión a MySQL
 const pool = mysql.createPool({
   host: 'localhost',
-  user: 'root',            
-  password: 'mauri123', 
+  user: 'root',
+  password: 'mauri123', // tu contraseña de MySQL
   database: 'pawgo',
   port: 3306,
 });
@@ -23,7 +21,7 @@ app.get('/', (req, res) => {
   res.send('API PAWGO OK');
 });
 
-// REGISTRO DE USUARIO
+// ---------- REGISTRO DE USUARIO ----------
 app.post('/api/register', async (req, res) => {
   const {
     nombres,
@@ -39,8 +37,8 @@ app.post('/api/register', async (req, res) => {
     telefono,
   } = req.body;
 
-  if (!nombres || !apellidoP || !correo || !password || !calle || !cp) {
-    return res.status(400).json({ ok: false, message: 'Faltan datos' });
+  if (!nombres || !apellidoP || !correo || !password || !calle || !cp || !numExt) {
+    return res.status(400).json({ ok: false, message: 'Faltan datos obligatorios' });
   }
 
   const apellidos = `${apellidoP} ${apellidoM || ''}`.trim();
@@ -76,7 +74,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// LOGIN
+// ---------- LOGIN ----------
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -106,7 +104,122 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// ---------- HELPERS ----------
+function normalizarTamano(t) {
+  if (!t) return 'mediano';
+  t = t.toString().trim().toLowerCase();
+  if (t === 'ch' || t === 'chico' || t === 'c') return 'chico';
+  if (t === 'g' || t === 'grande') return 'grande';
+  if (t === 'm' || t === 'mediano') return 'mediano';
+  return 'mediano';
+}
+
+function mapSlot(diaVip) {
+  if (diaVip === 'tarde') {
+    return { hora_inicio: '17:00:00', hora_fin: '18:00:00' };
+  }
+  // Default mañana
+  return { hora_inicio: '10:00:00', hora_fin: '11:00:00' };
+}
+
+// ---------- OBTENER MASCOTAS DE UN USUARIO ----------
+app.get('/api/mascotas/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM mascotas WHERE id_dueno = ?',
+      [userId]
+    );
+    res.json({ ok: true, mascotas: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Error al obtener mascotas' });
+  }
+});
+
+// ---------- REGISTRAR MASCOTA ----------
+app.post('/api/mascotas', async (req, res) => {
+  const {
+    id_dueno,
+    nombreMascota,
+    raza,
+    edad,
+    peso,
+    tamano,
+  } = req.body;
+
+  if (!id_dueno || !nombreMascota) {
+    return res.status(400).json({ ok: false, message: 'Faltan datos de mascota' });
+  }
+
+  const tamanoDb = normalizarTamano(tamano);
+  const edadInt = edad ? parseInt(edad, 10) : null;
+  const pesoNum = peso ? parseFloat(peso) : null;
+
+  try {
+    const [result] = await pool.execute(
+      `INSERT INTO mascotas (id_dueno, nombre, raza, tamano, edad, peso)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id_dueno, nombreMascota, raza || null, tamanoDb, edadInt, pesoNum]
+    );
+
+    res.json({ ok: true, id_mascota: result.insertId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Error al registrar mascota' });
+  }
+});
+
+// ---------- CREAR RESERVA DE PASEO ----------
+app.post('/api/reservas', async (req, res) => {
+  const { id_cliente, id_mascota, fecha, diaVip } = req.body;
+
+  if (!id_cliente || !id_mascota || !fecha) {
+    return res.status(400).json({ ok: false, message: 'Faltan datos para la reserva' });
+  }
+
+  // Por ahora usamos un cuidador fijo (id 2) y servicio fijo (id 1)
+  const id_cuidador = 2;
+  const id_servicio = 1;
+
+  const { hora_inicio, hora_fin } = mapSlot(diaVip);
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Crear una disponibilidad asociada a esta reserva
+    const [dispResult] = await conn.execute(
+      `INSERT INTO disponibilidades (id_cuidador, fecha, hora_inicio, hora_fin, estado)
+       VALUES (?, ?, ?, ?, 'reservado')`,
+      [id_cuidador, fecha, hora_inicio, hora_fin]
+    );
+    const id_disponibilidad = dispResult.insertId;
+
+    // Crear la reserva
+    const [resResult] = await conn.execute(
+      `INSERT INTO reservas (id_cliente, id_cuidador, id_mascota, id_servicio, id_disponibilidad, estado)
+       VALUES (?, ?, ?, ?, ?, 'confirmada')`,
+      [id_cliente, id_cuidador, id_mascota, id_servicio, id_disponibilidad]
+    );
+
+    await conn.commit();
+
+    res.json({
+      ok: true,
+      id_reserva: resResult.insertId,
+      id_disponibilidad,
+    });
+  } catch (err) {
+    console.error(err);
+    await conn.rollback();
+    res.status(500).json({ ok: false, message: 'Error al crear la reserva' });
+  } finally {
+    conn.release();
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API PAWGO escuchando en http://localhost:${PORT}`);
 });
-
