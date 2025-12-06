@@ -1,71 +1,58 @@
-// server.js
-// Backend de PAWGO
+// -----------------------------------------
+// PAWGO - BACKEND COMPLETO (ACTUALIZADO)
+// -----------------------------------------
 
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
 
 const app = express();
-const PORT = 3000;
-
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Pool de conexión a MySQL
+// -----------------------------------------
+// CONEXIÓN A BD
+// -----------------------------------------
 const pool = mysql.createPool({
   host: "localhost",
   user: "root",
-  password: "mauri123",       // <-- tu contraseña de MySQL
+  password: "mauri123",
   database: "pawgo",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
 });
 
-// ---------- LOGIN ----------
+// -----------------------------------------
+// LOGIN
+// -----------------------------------------
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ ok: false, message: "Faltan datos." });
-    }
-
-    const conn = await pool.getConnection();
-    const [rows] = await conn.execute(
-      "SELECT id_usuario, nombre, apellidos, email, password_hash FROM usuarios WHERE email = ? LIMIT 1",
-      [email]
+    const [rows] = await pool.execute(
+      "SELECT * FROM usuarios WHERE email = ? AND password_hash = ?",
+      [email, password]
     );
-    conn.release();
 
-    if (!rows.length) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "Correo o contraseña incorrectos." });
+    if (rows.length === 0) {
+      return res.status(400).json({ ok: false, message: "Credenciales incorrectas" });
     }
 
     const user = rows[0];
 
-    // Aquí se podría usar bcrypt; por simplicidad usamos texto plano
-    if (user.password_hash !== password) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "Correo o contraseña incorrectos." });
-    }
-
-    return res.json({
+    res.json({
       ok: true,
-      user_id: user.id_usuario,
+      userId: user.id_usuario,
       nombre: user.nombre,
+      rol: user.rol || "cliente",
     });
   } catch (err) {
     console.error("Error en /api/login:", err);
-    res.status(500).json({ ok: false, message: "Error en el servidor." });
+    res.status(500).json({ ok: false, message: "Error interno" });
   }
 });
 
-// ---------- REGISTRO ----------
+// -----------------------------------------
+// REGISTRO DE USUARIO
+// -----------------------------------------
 app.post("/api/register", async (req, res) => {
   try {
     const {
@@ -80,152 +67,257 @@ app.post("/api/register", async (req, res) => {
       numExt,
       alcaldia,
       telefono,
+      rol,
     } = req.body;
 
-    if (!nombres || !apellidoP || !correo || !password || !calle || !cp || !numExt) {
-      return res.status(400).json({ ok: false, message: "Faltan datos." });
-    }
-
-    const conn = await pool.getConnection();
-
-    // Insertar usuario
-    const [userResult] = await conn.execute(
-      `INSERT INTO usuarios (nombre, apellidos, email, password_hash, telefono, rol, estado)
-       VALUES (?, ?, ?, ?, ?, 'cliente', 'activo')`,
+    const [result] = await pool.execute(
+      `INSERT INTO usuarios(nombre, apellidos, email, password_hash, rol, calle, cp, num_int, num_ext, alcaldia, telefono)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nombres,
-        `${apellidoP} ${apellidoM || ""}`.trim(),
+        `${apellidoP} ${apellidoM}`,
         correo,
-        password, // en real debería ir hash
-        telefono || null,
-      ]
-    );
-
-    const userId = userResult.insertId;
-
-    // Insertar dirección principal
-    await conn.execute(
-      `INSERT INTO direcciones 
-       (id_usuario, calle, numero_ext, numero_int, colonia, cp, es_principal)
-       VALUES (?, ?, ?, ?, ?, ?, 1)`,
-      [
-        userId,
+        password,
+        rol || "cliente",
         calle,
-        numExt,
-        numInt || null,
-        alcaldia || "",
         cp,
+        numInt || null,
+        numExt,
+        alcaldia,
+        telefono,
       ]
     );
-
-    conn.release();
 
     res.json({
       ok: true,
-      userId,
+      userId: result.insertId,
       nombre: nombres,
+      rol: rol || "cliente",
     });
   } catch (err) {
-    console.error("Error en /api/register:", err);
-    res.status(500).json({ ok: false, message: "Error en el servidor." });
+    console.error("Error registrando usuario:", err);
+    res.status(500).json({ ok: false, message: "Error interno" });
   }
 });
 
-// ---------- OBTENER MASCOTAS DE UN USUARIO ----------
+// -----------------------------------------
+// OBTENER MASCOTAS POR USUARIO
+// -----------------------------------------
 app.get("/api/mascotas/:idUsuario", async (req, res) => {
   try {
     const { idUsuario } = req.params;
 
-    const conn = await pool.getConnection();
-    const [rows] = await conn.execute(
-      `SELECT id_mascota, id_dueno, nombre, raza, tamano, edad, peso 
-       FROM mascotas
-       WHERE id_dueno = ?`,
+    const [rows] = await pool.execute(
+      "SELECT * FROM mascotas WHERE id_usuario = ?",
       [idUsuario]
     );
-    conn.release();
 
-    // Devolvemos directamente el arreglo (así lo espera el front)
     res.json(rows);
   } catch (err) {
-    console.error("Error en GET /api/mascotas/:idUsuario:", err);
-    res.status(500).json({ ok: false, message: "Error en el servidor." });
+    console.error("Error al obtener mascotas:", err);
+    res.status(500).json({ ok: false });
   }
 });
 
-// ---------- CREAR MASCOTA ----------
-app.post("/api/mascotas", async (req, res) => {
-  try {
-    const { duenoId, nombre, raza, edad, peso, tamano } = req.body;
-
-    if (!duenoId || !nombre) {
-      return res.status(400).json({ ok: false, message: "Faltan datos de mascota." });
-    }
-
-    const conn = await pool.getConnection();
-    const [result] = await conn.execute(
-      `INSERT INTO mascotas (id_dueno, nombre, raza, tamano, edad, peso)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        duenoId,
-        nombre,
-        raza || null,
-        tamano || null,
-        edad || null,
-        peso || null,
-      ]
-    );
-    conn.release();
-
-    res.json({
-      ok: true,
-      id: result.insertId,
-    });
-  } catch (err) {
-    console.error("Error en POST /api/mascotas:", err);
-    res.status(500).json({ ok: false, message: "Error en el servidor." });
-  }
-});
-
-// ---------- AGENDAR PASEO (VIP o normal) ----------
+// -----------------------------------------
+// AGENDAR PASEO (CLIENTE)
+// -----------------------------------------
 app.post("/api/paseos", async (req, res) => {
   try {
-    console.log("BODY /api/paseos =>", req.body);
+    const { id_cliente, id_mascota, fecha, turno } = req.body;
 
-    const { userId, petIds, date, turno } = req.body;
+    const [result] = await pool.execute(
+      `INSERT INTO reservas (id_cliente, id_mascota, fecha_creacion, estado, estado_paseo)
+       VALUES (?, ?, NOW(), 'pendiente', 'pendiente')`,
+      [id_cliente, id_mascota]
+    );
 
-    if (!userId || !Array.isArray(petIds) || petIds.length === 0) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "userId o petIds inválidos" });
-    }
-
-    // Aquí podrías insertar en tu tabla 'reservas' realmente.
-    // De momento, solo respondemos OK para que el flujo funcione.
-    // Ejemplo (comentado):
-    /*
-    const conn = await pool.getConnection();
-    for (const petId of petIds) {
-      await conn.execute(
-        `INSERT INTO reservas (id_cliente, id_mascota, fecha_creacion, estado, motivo_cancelacion)
-         VALUES (?, ?, NOW(), 'pendiente', NULL)`,
-        [userId, petId]
-      );
-    }
-    conn.release();
-    */
-
-    res.json({
-      ok: true,
-      message: "Paseo agendado correctamente.",
-    });
+    res.json({ ok: true, reservaId: result.insertId });
   } catch (err) {
-    console.error("Error en POST /api/paseos:", err);
-    res.status(500).json({ ok: false, message: "Error en el servidor." });
+    console.error("Error creando paseo:", err);
+    res.status(500).json({ ok: false });
   }
 });
 
-// ---------- ARRANCAR SERVIDOR ----------
-app.listen(PORT, () => {
-  console.log(`Servidor PAWGO corriendo en http://localhost:${PORT}`);
+// -----------------------------------------
+// CUIDADOR — LISTAR PASEOS PENDIENTES
+// -----------------------------------------
+app.get("/api/paseos/pendientes-cuidador/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT r.*, c.nombre AS cliente_nombre, m.nombre AS mascota_nombre
+       FROM reservas r
+       JOIN usuarios c ON r.id_cliente = c.id_usuario
+       JOIN mascotas m ON r.id_mascota = m.id_mascota
+       WHERE r.estado = 'pendiente'`
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error en pendientes-cuidador:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// -----------------------------------------
+// CUIDADOR — ACEPTAR PASEO
+// -----------------------------------------
+app.post("/api/paseos/aceptar", async (req, res) => {
+  try {
+    const { id_reserva, id_cuidador } = req.body;
+
+    await pool.execute(
+      `UPDATE reservas 
+       SET id_cuidador = ?, estado = 'confirmada', estado_paseo = 'en_progreso'
+       WHERE id_reserva = ?`,
+      [id_cuidador, id_reserva]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error al aceptar paseo:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// -----------------------------------------
+// CUIDADOR — EN PROGRESO
+// -----------------------------------------
+app.get("/api/paseos/en-progreso-cuidador/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT r.*, c.nombre AS cliente_nombre, m.nombre AS mascota_nombre
+       FROM reservas r
+       JOIN usuarios c ON r.id_cliente = c.id_usuario
+       JOIN mascotas m ON r.id_mascota = m.id_mascota
+       WHERE r.id_cuidador = ?
+       AND r.estado_paseo = 'en_progreso'`,
+      [id]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error en en-progreso:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// -----------------------------------------
+// CUIDADOR — HISTORIAL
+// -----------------------------------------
+app.get("/api/paseos/historial-cuidador/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT r.*, c.nombre AS cliente_nombre, m.nombre AS mascota_nombre
+       FROM reservas r
+       JOIN usuarios c ON r.id_cliente = c.id_usuario
+       JOIN mascotas m ON r.id_mascota = m.id_mascota
+       WHERE r.id_cuidador = ?
+       AND r.estado_paseo IN ('completado','cancelado')`,
+      [id]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error en historial:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// -----------------------------------------
+// GUARDAR UBICACIÓN DEL CUIDADOR
+// -----------------------------------------
+app.post("/api/paseos/actualizar-ubicacion", async (req, res) => {
+  try {
+    const { id_reserva, lat, lng } = req.body;
+
+    await pool.execute(
+      `UPDATE reservas SET cuidador_lat = ?, cuidador_lng = ? WHERE id_reserva = ?`,
+      [lat, lng, id_reserva]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error actualizando ubicación:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+
+app.get("/api/paseos/detalle/:id_reserva", async (req, res) => {
+  try {
+    const { id_reserva } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT 
+         r.*, 
+         c.nombre AS cliente_nombre,
+         c.apellidos AS cliente_apellidos,
+         c.calle,
+         c.cp,
+         c.alcaldia,
+         c.latitud AS cliente_lat,
+         c.longitud AS cliente_lng,
+         m.nombre AS mascota_nombre,
+         m.raza,
+         m.foto_url
+       FROM reservas r
+       JOIN usuarios c ON r.id_cliente = c.id_usuario
+       JOIN mascotas m ON r.id_mascota = m.id_mascota
+       WHERE r.id_reserva = ?`,
+      [id_reserva]
+    );
+
+    res.json({ ok: true, data: rows[0] });
+  } catch (err) {
+    console.error("Error detalle paseo:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.post("/api/paseos/guardar-ubicacion", async (req, res) => {
+  try {
+    const { id_reserva, lat, lng } = req.body;
+
+    await pool.execute(
+      `UPDATE reservas 
+       SET cuidador_lat = ?, cuidador_lng = ?
+       WHERE id_reserva = ?`,
+      [lat, lng, id_reserva]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Error guardando ubicación:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.get("/api/paseos/ubicacion-cuidador/:id_reserva", async (req, res) => {
+  try {
+    const { id_reserva } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT cuidador_lat, cuidador_lng 
+       FROM reservas WHERE id_reserva = ?`,
+      [id_reserva]
+    );
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error obteniendo ubicación:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+
+// -----------------------------------------
+app.listen(3000, () => {
+  console.log("Servidor PAWGO corriendo en http://localhost:3000");
 });

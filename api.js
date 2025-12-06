@@ -1,122 +1,53 @@
-// api.js
-// Funciones para hablar con el backend
+const API = "http://localhost:3000/api";
 
-const API_URL = "http://localhost:3000";
-
-// -------- LOGIN --------
-async function apiLogin(body) {
-  try {
-    const resp = await fetch(`${API_URL}/api/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const data = await resp.json().catch(() => ({}));
-
-    if (!resp.ok) {
-      return {
-        ok: false,
-        message: data.message || "Error en login.",
-      };
-    }
-
-    return data; // { ok: true, user_id, nombre }
-  } catch (err) {
-    console.error("apiLogin error:", err);
-    return { ok: false, message: "Error de red en login." };
-  }
+// --- REGISTRO ---
+async function apiRegisterUser(data) {
+  const res = await fetch(`${API}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  return await res.json();
 }
 
-// -------- REGISTRO --------
-async function apiRegisterUser(body) {
-  try {
-    const resp = await fetch(`${API_URL}/api/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const data = await resp.json().catch(() => ({}));
-
-    if (!resp.ok) {
-      return {
-        ok: false,
-        message: data.message || "Error al registrar usuario.",
-      };
-    }
-
-    return data; // { ok: true, userId, nombre }
-  } catch (err) {
-    console.error("apiRegisterUser error:", err);
-    return { ok: false, message: "Error de red al registrar." };
-  }
+// --- LOGIN ---
+async function apiLogin(data) {
+  const res = await fetch(`${API}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  return await res.json();
 }
 
-// -------- OBTENER MASCOTAS DE UN USUARIO --------
+// --- MASCOTAS ---
 async function apiGetPets(userId) {
-  try {
-    const resp = await fetch(`${API_URL}/api/mascotas/${userId}`);
-    const data = await resp.json().catch(() => []);
-
-    if (!resp.ok) {
-      console.error("apiGetPets error:", data);
-      return [];
-    }
-
-    return data; // arreglo de mascotas
-  } catch (err) {
-    console.error("apiGetPets error:", err);
-    return [];
-  }
+  const res = await fetch(`${API}/pets/${userId}`);
+  return await res.json();
 }
 
-// -------- CREAR MASCOTA --------
-async function apiCreatePet(body) {
-  try {
-    const resp = await fetch(`${API_URL}/api/mascotas`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const data = await resp.json().catch(() => ({}));
-
-    if (!resp.ok) {
-      return {
-        ok: false,
-        message: data.message || "Error al crear mascota.",
-      };
-    }
-
-    return data; // { ok: true, id }
-  } catch (err) {
-    console.error("apiCreatePet error:", err);
-    return { ok: false, message: "Error de red al crear mascota." };
-  }
+// --- AGENDAR PASEO ---
+async function apiAgendarPaseo(clienteId, mascotasIds, turno) {
+  const res = await fetch(`${API}/paseos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: clienteId, mascotasIds, turno })
+  });
+  return await res.json();
 }
 
-// -------- AGENDAR PASEO VIP --------
-async function apiAgendarVip(body) {
-  try {
-    const resp = await fetch(`${API_URL}/api/paseos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+// --- CUIDADOR: OBTENER PASEOS ---
+async function apiGetPendingWalks() {
+  const res = await fetch(`${API}/care/pending-walks`);
+  return await res.json();
+}
 
-    const data = await resp.json().catch(() => ({}));
-
-    if (!resp.ok) {
-      return {
-        ok: false,
-        message: data.message || "Error al agendar paseo.",
-      };
-    }
-
-    return data; // { ok: true, message }
-  } catch (err) {
-    console.error("apiAgendarVip error:", err);
-    return { ok: false, message: "Error de red al agendar paseo." };
-  }
+// --- CUIDADOR: ACEPTAR PASEO ---
+async function apiAcceptWalk(paseoId, cuidadorId) {
+  const res = await fetch(`${API}/care/accept`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paseoId, cuidadorId })
+  });
+  return await res.json();
 }
