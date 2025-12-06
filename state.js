@@ -37,14 +37,39 @@ document.addEventListener("click", (event) => {
 
 // -------- ESTADO GLOBAL --------
 
-// Lista de mascotas (se llenará desde el formulario y en un futuro desde la BD)
+// Nombre del usuario actual (lo usa auth.js también)
+let currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
+
+// Usuario logueado
+let currentUser = null;
+
+// Lista de mascotas del usuario logueado
 let pets = [];
 
-// Mascota seleccionada para paseo
-let selectedPetId = null;
+// Cargar mascotas del usuario logueado desde el backend
+async function loadPetsForCurrentUser() {
+  if (!currentUser) {
+    // intentar recuperar de localStorage
+    const storedId = Number(localStorage.getItem("pawgoUserId"));
+    if (!storedId) return;
+    currentUser = { user_id: storedId };
+  }
 
-// Nombre del usuario actual
-let currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
+  try {
+    const userId = currentUser.user_id || currentUser.id_usuario;
+    if (!userId) return;
+
+    const data = await apiGetPets(userId);
+    // data debe ser un arreglo de mascotas devuelto por el backend
+    pets = Array.isArray(data) ? data : [];
+
+    if (typeof renderPets === "function") renderPets();
+    if (typeof renderPetsSchedule === "function") renderPetsSchedule();
+    if (typeof renderPetsVip === "function") renderPetsVip();
+  } catch (err) {
+    console.error("Error al cargar mascotas:", err);
+  }
+}
 
 // Inicialización al cargar el DOM
 document.addEventListener("DOMContentLoaded", () => {

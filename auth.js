@@ -1,7 +1,10 @@
 // auth.js
 // Lógica de autenticación y manejo de nombre de usuario
 
-currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
+// Asegurarnos de que existe currentUserName (lo declara state.js)
+if (typeof currentUserName === "undefined") {
+  currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
+}
 
 // Pone el nombre en "Bienvenido X"
 function renderWelcomeName() {
@@ -12,14 +15,13 @@ function renderWelcomeName() {
 }
 renderWelcomeName();
 
-// Helper para cambiar de pantalla
+// Helper para cambiar de pantalla usando showScreen de state.js
 function goToScreen(id) {
-  // Si ya existe showScreen en otro archivo, úsalo
   if (typeof showScreen === "function") {
     showScreen(id);
     return;
   }
-  // Fallback: manejar la clase .active aquí
+  // Fallback (por si acaso)
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   const target = document.getElementById(id);
   if (target) target.classList.add("active");
@@ -87,8 +89,8 @@ if (btnRegister2 && formRegister1 && formRegister2) {
       if (resp.userId) {
         localStorage.setItem("pawgoUserId", resp.userId);
       }
-      renderWelcomeName();
 
+      renderWelcomeName();
       alert("Registro completado.");
       goToScreen("screen-home");
     } catch (err) {
@@ -114,6 +116,7 @@ if (formLogin) {
     }
 
     try {
+      // El backend espera { email, password }
       const resp = await apiLogin({ email: correo, password });
 
       if (!resp.ok) {
@@ -121,16 +124,29 @@ if (formLogin) {
         return;
       }
 
+      // resp: { ok: true, user_id: 4, nombre: "Mauricio" }
+      currentUser = {
+        user_id: resp.user_id,
+        nombre: resp.nombre,
+        email: correo,
+      };
+
       currentUserName = resp.nombre || correo.split("@")[0] || "Usuario";
       currentUserName =
         currentUserName.charAt(0).toUpperCase() + currentUserName.slice(1);
 
       localStorage.setItem("pawgoUserName", currentUserName);
-      if (resp.userId) {
-        localStorage.setItem("pawgoUserId", resp.userId);
+      if (resp.user_id) {
+        localStorage.setItem("pawgoUserId", resp.user_id);
       }
 
       renderWelcomeName();
+
+      // Cargar mascotas del usuario logueado
+      if (typeof loadPetsForCurrentUser === "function") {
+        await loadPetsForCurrentUser();
+      }
+
       alert("Inicio de sesión exitoso.");
       goToScreen("screen-home");
     } catch (err) {

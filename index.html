@@ -344,39 +344,16 @@
           <div class="pets-horizontal" id="pets-vip-container"></div>
 
           <form id="form-vip-walk" novalidate>
-            <label class="field">
-              <span class="field-label">Edad</span>
-              <input type="number" name="edadVip" placeholder="Ingresar número" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">Peso aproximado</span>
-              <input type="number" name="pesoVip" placeholder="Kg" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">Tamaño</span>
-              <input type="text" name="tamanoVip" placeholder="CH, M, G" />
-            </label>
-
-            <div class="field-row">
-              <label class="field">
-                <span class="field-label">Día</span>
-                <select name="diaVip" class="select-line">
-                  <option value="">H/M</option>
-                  <option value="manana">Mañana</option>
-                  <option value="tarde">Tarde</option>
-                </select>
-              </label>
-              <label class="field">
-                <span class="field-label">Esterilizado/Castrado</span>
-                <select name="esterilizadoVip" class="select-line">
-                  <option value="">SI/NO</option>
-                  <option value="si">Sí</option>
-                  <option value="no">No</option>
-                </select>
-              </label>
-            </div>
+  <div class="field-row">
+    <label class="field">
+      <span class="field-label">Turno del día</span>
+      <select name="diaVip" class="select-line">
+        <option value="">Seleccionar turno</option>
+        <option value="manana">Mañana</option>
+        <option value="tarde">Tarde</option>
+      </select>
+    </label>
+  </div>
 
             <button type="submit" class="btn btn-primary">
               Confirmar paseo

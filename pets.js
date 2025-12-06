@@ -1,14 +1,26 @@
 // pets.js
 // Manejo de mascotas en Home, Agendar paseo y VIP Pets
 
-// Se asume que existen variables globales en otro archivo:
-//   let pets = [];           // lista de mascotas
-//   let selectedPetId = null;
-
 // Contenedores de UI
 const petsContainer = document.getElementById("pets-container");
 const petsScheduleContainer = document.getElementById("pets-schedule-container");
 const petsVipContainer = document.getElementById("pets-vip-container");
+
+// ids de mascotas seleccionadas para paseo
+let selectedPetIds = [];
+
+// -------- HELPERS --------
+function isPetSelected(petId) {
+  return selectedPetIds.includes(petId);
+}
+
+function getPetId(pet) {
+  return pet.id_mascota || pet.id;
+}
+
+function getPetName(pet) {
+  return pet.nombre || pet.name;
+}
 
 // -------- RENDER EN HOME --------
 function renderPets() {
@@ -32,7 +44,7 @@ function renderPets() {
 
     row.innerHTML = `
       <span class="pet-icon">🐶</span>
-      <button class="pet-chip">${pet.name}</button>
+      <button class="pet-chip">${getPetName(pet)}</button>
       <button class="icon-round">⚙️</button>
     `;
 
@@ -53,16 +65,17 @@ function renderPetsSchedule() {
   }
 
   pets.forEach((pet) => {
-    const isSelected = pet.id === selectedPetId;
+    const id = getPetId(pet);
+    const selectedClass = isPetSelected(id) ? "selected" : "";
 
     const row = document.createElement("div");
     row.className = "pet-row";
 
     row.innerHTML = `
       <span class="pet-icon">🐶</span>
-      <button class="pet-chip pet-chip-selectable ${isSelected ? "selected" : ""}"
-              data-pet-id="${pet.id}">
-        ${pet.name}
+      <button class="pet-chip pet-chip-selectable ${selectedClass}"
+              data-pet-id="${id}">
+        ${getPetName(pet)}
       </button>
     `;
 
@@ -83,16 +96,17 @@ function renderPetsVip() {
   }
 
   pets.forEach((pet) => {
-    const isSelected = pet.id === selectedPetId;
+    const id = getPetId(pet);
+    const selectedClass = isPetSelected(id) ? "selected" : "";
 
     const row = document.createElement("div");
     row.className = "pet-row";
 
     row.innerHTML = `
       <span class="pet-icon">🐶</span>
-      <button class="pet-chip pet-chip-selectable ${isSelected ? "selected" : ""}"
-              data-pet-id="${pet.id}">
-        ${pet.name}
+      <button class="pet-chip pet-chip-selectable ${selectedClass}"
+              data-pet-id="${id}">
+        ${getPetName(pet)}
       </button>
     `;
 
@@ -100,45 +114,22 @@ function renderPetsVip() {
   });
 }
 
-// -------- CARGAR MASCOTAS DESDE EL BACKEND --------
-async function loadPetsFromBackend() {
-  const userId = localStorage.getItem("pawgoUserId");
-  if (!userId) return;
-
-  try {
-    const resp = await apiGetMascotas(userId);
-    if (!resp.ok) {
-      console.warn(resp.message || "No se pudieron cargar mascotas");
-      return;
-    }
-
-    pets = (resp.mascotas || []).map((row) => ({
-      id: row.id_mascota,
-      name: row.nombre,
-      size: row.tamano,
-      raw: row,
-    }));
-
-    renderPets();
-    renderPetsSchedule();
-    renderPetsVip();
-  } catch (err) {
-    console.error("Error cargando mascotas:", err);
-  }
-}
-
-async function refreshPetsUI() {
-  await loadPetsFromBackend();
-}
-
-// -------- SELECCIONAR MASCOTA (chips clickeables) --------
+// -------- SELECCIONAR / DESELECCIONAR MASCOTAS (chips clickeables) --------
 document.addEventListener("click", (e) => {
   const chip = e.target.closest(".pet-chip-selectable");
   if (!chip) return;
 
   const petId = Number(chip.dataset.petId);
-  selectedPetId = petId;
+  if (!petId) return;
 
+  const idx = selectedPetIds.indexOf(petId);
+  if (idx === -1) {
+    selectedPetIds.push(petId);      // agregar
+  } else {
+    selectedPetIds.splice(idx, 1);   // quitar
+  }
+
+  // Volvemos a dibujar listas donde aparece la selección
   renderPetsSchedule();
   renderPetsVip();
 });
@@ -150,17 +141,11 @@ if (formPetRegister) {
   formPetRegister.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const userId = localStorage.getItem("pawgoUserId");
-    if (!userId) {
-      alert("Primero inicia sesión o regístrate.");
-      return;
-    }
-
     const nombreMascota = formPetRegister.nombreMascota.value.trim();
     const raza = formPetRegister.raza.value.trim();
-    const edad = formPetRegister.edad.value.trim();
-    const peso = formPetRegister.peso.value.trim();
-    const tamano = formPetRegister.tamano.value.trim();
+    const edad = formPetRegister.edad.value ? Number(formPetRegister.edad.value) : null;
+    const peso = formPetRegister.peso.value ? Number(formPetRegister.peso.value) : null;
+    const tamano = formPetRegister.tamano.value.trim(); // CH, M, G
 
     if (!nombreMascota) {
       alert("Ingresa el nombre de la mascota.");
@@ -168,47 +153,55 @@ if (formPetRegister) {
       return;
     }
 
+    const userId =
+      (currentUser && (currentUser.user_id || currentUser.id_usuario)) ||
+      Number(localStorage.getItem("pawgoUserId"));
+
+    if (!userId) {
+      alert("No se encontró el usuario actual. Vuelve a iniciar sesión.");
+      return;
+    }
+
+    const payload = {
+      duenoId: userId,
+      nombre: nombreMascota,
+      raza,
+      edad,
+      peso,
+      tamano,
+    };
+
     try {
-      const resp = await apiCreatePet({
-        id_dueno: userId,
-        nombreMascota,
-        raza,
-        edad,
-        peso,
-        tamano,
-      });
+      const resp = await apiCreatePet(payload);
 
       if (!resp.ok) {
-        alert(resp.message || "Error al registrar mascota.");
+        alert(resp.message || "No se pudo guardar la mascota.");
         return;
       }
 
       const newPet = {
-        id: resp.id_mascota || Date.now(),
-        name: nombreMascota,
-        size: tamano,
+        id_mascota: resp.id,
+        nombre: nombreMascota,
+        raza,
+        edad,
+        peso,
+        tamano,
       };
 
       pets.push(newPet);
-      selectedPetId = newPet.id;
+
+      // La nueva mascota queda seleccionada por defecto para paseo
+      selectedPetIds.push(newPet.id_mascota);
 
       formPetRegister.reset();
 
+      showScreen("screen-home");
       renderPets();
       renderPetsSchedule();
       renderPetsVip();
-
-      if (typeof showScreen === "function") {
-        showScreen("screen-home");
-      } else {
-        document
-          .querySelectorAll(".screen")
-          .forEach((s) => s.classList.remove("active"));
-        document.getElementById("screen-home")?.classList.add("active");
-      }
     } catch (err) {
       console.error(err);
-      alert("Error conectando con el servidor.");
+      alert("Error al registrar mascota.");
     }
   });
 }
@@ -220,75 +213,63 @@ if (formVipWalk) {
   formVipWalk.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const userId = localStorage.getItem("pawgoUserId");
-    if (!userId) {
-      alert("Primero inicia sesión o regístrate.");
+    if (!selectedPetIds.length) {
+      alert("Selecciona al menos una mascota para agendar el paseo.");
       return;
     }
 
-    if (!selectedPetId) {
-      alert("Selecciona una mascota para agendar el paseo.");
+    // Turno (mañana / tarde)
+    const turno = formVipWalk.diaVip.value;
+    if (!turno) {
+      alert("Selecciona el turno del día.");
       return;
     }
 
-    const pet = pets.find((p) => p.id === selectedPetId);
-
+    // Fecha desde el input de la pantalla de calendario (puede ser null)
     const dateInput = document.getElementById("walk-date");
-    const dateValue = dateInput ? dateInput.value : "";
-    if (!dateValue) {
-      alert("Selecciona la fecha del paseo.");
+    const dateValue = dateInput ? dateInput.value : null;
+
+    const userId =
+      (currentUser && (currentUser.user_id || currentUser.id_usuario)) ||
+      Number(localStorage.getItem("pawgoUserId"));
+
+    if (!userId) {
+      alert("No se encontró el usuario actual. Vuelve a iniciar sesión.");
       return;
     }
-
-    const diaVip = formVipWalk.diaVip.value; // mañana / tarde / ""
 
     try {
-      const resp = await apiCreateReserva({
-        id_cliente: userId,
-        id_mascota: selectedPetId,
-        fecha: dateValue,
-        diaVip,
-      });
+      const body = {
+        userId,
+        petIds: selectedPetIds,
+        date: dateValue,
+        turno,
+      };
+
+      console.log("Body que se envía a /api/paseos:", body);
+
+      const resp = await apiAgendarVip(body);
 
       if (!resp.ok) {
-        alert(resp.message || "Error al agendar paseo.");
+        alert(resp.message || "No se pudo agendar el paseo.");
         return;
       }
 
       const confirmedTextEl = document.getElementById("confirmed-text");
       if (confirmedTextEl) {
-        let text = "Tu paseo ha sido agendado correctamente.";
-        if (pet || dateValue) {
-          text = "Hemos agendado el paseo";
-          if (pet) text += ` para ${pet.name}`;
-          if (dateValue) text += ` el ${dateValue}`;
-          if (diaVip === "manana") text += " por la mañana";
-          else if (diaVip === "tarde") text += " por la tarde";
-          text += ".";
-        }
-        confirmedTextEl.textContent = text;
+        let texto = "Paseo agendado correctamente.";
+        if (dateValue) texto += ` Fecha: ${dateValue}.`;
+        texto += ` Turno: ${turno}.`;
+        confirmedTextEl.textContent = texto;
       }
 
+      selectedPetIds = [];
       formVipWalk.reset();
 
-      if (typeof showScreen === "function") {
-        showScreen("screen-walk-confirmed");
-      } else {
-        document
-          .querySelectorAll(".screen")
-          .forEach((s) => s.classList.remove("active"));
-        document
-          .getElementById("screen-walk-confirmed")
-          ?.classList.add("active");
-      }
+      showScreen("screen-walk-confirmed");
     } catch (err) {
-      console.error(err);
-      alert("Error conectando con el servidor.");
+      console.error("Error al agendar paseo VIP:", err);
+      alert("Error al agendar paseo VIP.");
     }
   });
 }
-
-// -------- Al cargar la página, traer mascotas de la BD --------
-document.addEventListener("DOMContentLoaded", () => {
-  refreshPetsUI();
-});
