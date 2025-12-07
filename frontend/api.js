@@ -64,3 +64,25 @@ async function apiGetCaregiverReservas(idCuidador) {
   const resp = await fetch(`${API_URL}/api/cuidadores/${idCuidador}/reservas`);
   return resp.json(); // { ok, reservas }
 }
+
+
+// -------- SERVICIOS --------
+async function apiGetServicios() {
+  const resp = await fetch(`${API_URL}/api/servicios`);
+  return resp.json(); // { ok, servicios }
+}
+
+// -------- TARIFAS CUIDADOR --------
+async function apiGetCaregiverTarifas(idCuidador) {
+  const resp = await fetch(`${API_URL}/api/cuidadores/${idCuidador}/tarifas`);
+  return resp.json(); // { ok, tarifas }
+}
+
+async function apiSaveCaregiverTarifas(idCuidador, data) {
+  const resp = await fetch(`${API_URL}/api/cuidadores/${idCuidador}/tarifas`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return resp.json(); // { ok, message? }
+}

@@ -260,7 +260,7 @@
         </div>
       </section>
 
-            <!-- PANTALLA 5B: HOME CUIDADOR -->
+                 <!-- PANTALLA 5B: HOME CUIDADOR -->
       <section id="screen-caregiver-home" class="screen">
         <header class="screen-header home-header">
           <div class="icon-btn">☰</div>
@@ -280,8 +280,21 @@
 
           <!-- Perfil cuidador -->
           <div class="card">
-            <h3 class="section-title">Tu perfil</h3>
-            <form id="form-caregiver-profile" novalidate>
+            <div class="card-header-row">
+              <h3 class="section-title">Tu perfil</h3>
+              <button
+                type="button"
+                class="btn-outline-sm"
+                id="btn-edit-profile"
+              >
+                Editar
+              </button>
+            </div>
+
+            <p class="small-muted" id="caregiver-rating"></p>
+            <p class="small-muted" id="caregiver-services"></p>
+
+            <form id="form-caregiver-profile" novalidate data-editing="false">
               <label class="field">
                 <span class="field-label">Descripción</span>
                 <textarea
@@ -289,6 +302,7 @@
                   name="descripcion"
                   rows="3"
                   placeholder="Cuenta brevemente tu experiencia con mascotas"
+                  disabled
                 ></textarea>
               </label>
 
@@ -301,6 +315,7 @@
                     name="experiencia_anios"
                     min="0"
                     placeholder="0"
+                    disabled
                   />
                 </label>
                 <label class="field small">
@@ -310,12 +325,86 @@
                     id="caregiver-telefono"
                     name="telefono"
                     placeholder="Número"
+                    disabled
                   />
                 </label>
               </div>
 
-              <button type="submit" class="btn btn-primary">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="btn-save-profile"
+                disabled
+              >
                 Guardar perfil
+              </button>
+            </form>
+          </div>
+
+          <!-- TARIFAS DEL CUIDADOR -->
+          <div class="card">
+            <div class="card-header-row">
+              <h3 class="section-title">Tus tarifas (Paseo estándar)</h3>
+              <button
+                type="button"
+                class="btn-outline-sm"
+                id="btn-edit-tarifas"
+              >
+                Editar
+              </button>
+            </div>
+
+            <form
+              id="form-caregiver-tarifas"
+              novalidate
+              data-editing="false"
+            >
+              <div class="field-row">
+                <label class="field small">
+                  <span class="field-label">Perro chico (MXN)</span>
+                  <input
+                    type="number"
+                    id="tarifa-chico"
+                    name="chico"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    disabled
+                  />
+                </label>
+                <label class="field small">
+                  <span class="field-label">Perro mediano (MXN)</span>
+                  <input
+                    type="number"
+                    id="tarifa-mediano"
+                    name="mediano"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    disabled
+                  />
+                </label>
+                <label class="field small">
+                  <span class="field-label">Perro grande (MXN)</span>
+                  <input
+                    type="number"
+                    id="tarifa-grande"
+                    name="grande"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    disabled
+                  />
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="btn-save-tarifas"
+                disabled
+              >
+                Guardar tarifas
               </button>
             </form>
           </div>
@@ -329,7 +418,6 @@
           </div>
         </div>
       </section>
-
 
       <!-- PANTALLA 6: REGISTRAR MASCOTA -->
       <section id="screen-pet-register" class="screen">
