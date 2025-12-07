@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PAWGO</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+    <main class="phone-frame">
+
+      <!-- PANTALLA 1: BIENVENIDA -->
+      <section id="screen-welcome" class="screen active">
+        <div class="screen-content">
+          <h1 class="app-title app-title-center">PAWGO</h1>
+
+          <!-- Logo -->
+          <div class="logo-box">
+            <!-- Reemplaza por tu logo si quieres -->
+            <span class="logo-paws">🐾🐾</span>
+          </div>
+
+          <div class="block">
+            <p class="section-title">Iniciar sesión</p>
+            <button class="btn btn-primary" data-next="screen-login">
+              Continuar
+            </button>
+          </div>
+
+          <div class="block">
+            <p class="section-title">Crear cuenta</p>
+            <p class="section-subtitle">
+              Click en continuar para registrarte.
+            </p>
+            <button class="btn btn-primary" data-next="screen-register-1">
+              Continuar
+            </button>
+          </div>
+
+          <p class="legal-text">
+            Al hacer clic en continuar, aceptas nuestros
+            <a href="#">Términos de servicio</a> y
+            <a href="#">Política de privacidad</a>.
+          </p>
+        </div>
+      </section>
+
+      <!-- PANTALLA 2: REGISTRO DATOS BÁSICOS -->
+      <section id="screen-register-1" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-welcome">←</button>
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content">
+          <h2 class="screen-title">Regístrate</h2>
+          <p class="field-group-title">Nombre</p>
+
+          <form id="form-register-1" novalidate>
+            <label class="field">
+              <span class="field-label">Ingresar nombre(s)</span>
+              <input type="text" name="nombres" placeholder="Ingresar nombre(s)" required />
+            </label>
+
+            <p class="field-group-title">Apellidos</p>
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">Paterno</span>
+                <input type="text" name="apellidoP" placeholder="Paterno" required />
+              </label>
+              <label class="field">
+                <span class="field-label">Materno</span>
+                <input type="text" name="apellidoM" placeholder="Materno" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="field-label">Ingresar correo electrónico</span>
+              <input type="email" name="correo" placeholder="Ingresar correo" required />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Contraseña</span>
+              <input type="password" name="password" placeholder="Ingresar contraseña" required />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Confirmar contraseña</span>
+              <input type="password" name="password2" placeholder="Ingresar contraseña" required />
+            </label>
+
+            <button type="button" class="btn btn-primary" data-next="screen-register-2">
+              Continuar
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- PANTALLA 3: REGISTRO DATOS DE CONTACTO -->
+      <section id="screen-register-2" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-register-1">←</button>
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content">
+          <h2 class="screen-title">Datos del contacto</h2>
+
+          <form id="form-register-2" novalidate>
+            <p class="field-group-title">Ingresar dirección</p>
+
+            <label class="field">
+              <span class="field-label">Calle</span>
+              <input type="text" name="calle" placeholder="Calle" required />
+            </label>
+
+            <div class="field-row">
+              <label class="field small">
+                <span class="field-label">CP</span>
+                <input type="text" name="cp" placeholder="CP" required />
+              </label>
+              <label class="field small">
+                <span class="field-label">Num Int</span>
+                <input type="text" name="numInt" placeholder="Número..." />
+              </label>
+              <label class="field small">
+                <span class="field-label">Num Ext</span>
+                <input type="text" name="numExt" placeholder="Número..." />
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="field-label">Alcaldía</span>
+              <input type="text" name="alcaldia" placeholder="Alcaldía" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Número de teléfono</span>
+              <input type="tel" name="telefono" placeholder="Ingresar número" />
+            </label>
+
+            <button id="btn-register-2" type="button" class="btn btn-primary">
+              Continuar
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- PANTALLA 4: LOGIN -->
+      <section id="screen-login" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-welcome">←</button>
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content">
+          <h2 class="screen-title">Inicia sesión</h2>
+
+          <form id="form-login" novalidate>
+            <label class="field">
+              <span class="field-label">Correo electrónico</span>
+              <input type="email" name="correoLogin" placeholder="Ingresar correo" required />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Contraseña</span>
+              <input type="password" name="passwordLogin" placeholder="Ingresar contraseña" required />
+            </label>
+
+            <button type="submit" class="btn btn-primary">
+              Entrar
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- PANTALLA 5: HOME / DASHBOARD -->
+      <section id="screen-home" class="screen">
+        <header class="screen-header home-header">
+          <div class="icon-btn">☰</div>
+          <button class="btn-outline-sm" data-next="screen-welcome">
+            Salir de la cuenta
+          </button>
+          <div class="icon-btn">🔔</div>
+        </header>
+
+        <div class="screen-content home-content">
+          <div class="home-welcome-row">
+            <h2 class="home-welcome">
+              Bienvenido <span id="welcome-username">Usuario</span>
+            </h2>
+            <div class="icon-btn person">👤</div>
+          </div>
+
+          <!-- Mascotas -->
+          <div class="pets-list">
+            <!-- AQUÍ JS va a dibujar las tarjetas de las mascotas -->
+            <div id="pets-container"></div>
+
+            <!-- fila para agregar nueva mascota -->
+            <div class="add-pet-row">
+              <input
+                type="text"
+                placeholder="Agregar mascota"
+                class="input-line"
+                readonly
+              />
+              <!-- sigue enviando al formulario de registrar mascota -->
+              <button class="icon-round" data-next="screen-pet-register">＋</button>
+            </div>
+          </div>
+
+          <!-- Dirección -->
+          <div class="address-row">
+            <input
+              type="text"
+              id="home-address"
+              value="Colima 242, Roma Norte, Cuauhtémoc, CDMX"
+              class="input-line"
+            />
+            <button id="btn-use-location" class="icon-round">📍</button>
+
+          </div>
+
+          <!-- Mapa -->
+          <div class="map-card">
+            <iframe
+              id="map-iframe"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+
+          <!-- Agendar paseo -->
+          <div class="schedule-row">
+            <button class="input-line button-like" data-next="screen-schedule-walk">
+              Agendar paseo
+            </button>
+            <button class="icon-round">📅</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 6: REGISTRAR MASCOTA -->
+      <section id="screen-pet-register" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-home">←</button>
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content">
+          <h2 class="screen-title">Regístrar a tu mascota</h2>
+
+          <form id="form-pet-register" novalidate>
+            <label class="field">
+              <span class="field-label">Nombre</span>
+              <input type="text" name="nombreMascota" placeholder="Únicamente un nombre" required />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Raza</span>
+              <input type="text" name="raza" placeholder="Raza" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Edad</span>
+              <input type="number" name="edad" placeholder="Ingresar número" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Peso aproximado</span>
+              <input type="number" name="peso" placeholder="Kg" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Tamaño</span>
+              <input type="text" name="tamano" placeholder="CH, M, G" />
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">Género</span>
+                <select name="genero" class="select-line">
+                  <option value="">H/M</option>
+                  <option value="hembra">Hembra</option>
+                  <option value="macho">Macho</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Esterilizado/Castrado</span>
+                <select name="esterilizado" class="select-line">
+                  <option value="">SI/NO</option>
+                  <option value="si">Sí</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar mascota</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- PANTALLA 7: AGENDAR PASEO (CALENDARIO) -->
+      <section id="screen-schedule-walk" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-home">←</button>
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content">
+          <h2 class="screen-title">Agendar paseo</h2>
+          <p class="subtitle-center">Seleccionar mascota que requiere paseo</p>
+
+          <!-- Contenedor para las mascotas a seleccionar en Agendar Paseo -->
+          <div class="pets-horizontal" id="pets-schedule-container"></div>
+
+          <p class="subtitle-center">Seleccionar día</p>
+
+<div class="calendar-card">
+  <input type="date" id="walk-date" class="input-line" />
+</div>
+
+
+          <button class="btn btn-primary" data-next="screen-vip-pets">
+            Continuar
+          </button>
+        </div>
+      </section>
+
+      <!-- PANTALLA 8: VIP PETS (DETALLE DEL PASEO) -->
+      <section id="screen-vip-pets" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-schedule-walk">←</button>
+          <h1 class="app-title">VIP PETS</h1>
+        </header>
+
+        <div class="screen-content">
+          <h2 class="screen-title">Agendar paseo</h2>
+          <p class="subtitle-center">Seleccionar mascota que requiere paseo</p>
+
+          <!-- Contenedor para las mascotas a seleccionar en VIP Pets -->
+          <div class="pets-horizontal" id="pets-vip-container"></div>
+
+          <form id="form-vip-walk" novalidate>
+            <label class="field">
+              <span class="field-label">Edad</span>
+              <input type="number" name="edadVip" placeholder="Ingresar número" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Peso aproximado</span>
+              <input type="number" name="pesoVip" placeholder="Kg" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Tamaño</span>
+              <input type="text" name="tamanoVip" placeholder="CH, M, G" />
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">Día</span>
+                <select name="diaVip" class="select-line">
+                  <option value="">H/M</option>
+                  <option value="manana">Mañana</option>
+                  <option value="tarde">Tarde</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Esterilizado/Castrado</span>
+                <select name="esterilizadoVip" class="select-line">
+                  <option value="">SI/NO</option>
+                  <option value="si">Sí</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              Confirmar paseo
+            </button>
+          </form>
+        </div>
+      </section>
+      <!-- PANTALLA 9: PASEO CONFIRMADO -->
+      <section id="screen-walk-confirmed" class="screen">
+        <header class="screen-header">
+          <h1 class="app-title">PAWGO</h1>
+        </header>
+
+        <div class="screen-content confirm-content">
+          <div class="confirm-icon">✅</div>
+          <h2 class="screen-title">Paseo confirmado</h2>
+          <p id="confirmed-text" class="confirm-text">
+            Tu paseo ha sido agendado correctamente.
+          </p>
+
+          <button class="btn btn-primary" data-next="screen-home">
+            Volver al inicio
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JS modular -->
+  <script src="state.js"></script>
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="pets.js"></script>
+  <script src="map.js"></script>
+</body>
+</html>
