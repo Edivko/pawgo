@@ -11,7 +11,36 @@ function showScreen(id) {
     target.classList.add("active");
     target.scrollTop = 0;
   }
+
+  // Efectos al entrar a ciertas pantallas
+  if (
+    id === "screen-schedule-walk" &&
+    typeof renderPetsSchedule === "function"
+  ) {
+    renderPetsSchedule();
+  }
+
+  if (id === "screen-vip-pets" && typeof renderPetsVip === "function") {
+    renderPetsVip();
+  }
+
+  if (
+    id === "screen-caregiver-home" &&
+    typeof loadCaregiverHome === "function"
+  ) {
+    loadCaregiverHome();
+  }
+
+  if (
+    id === "screen-home" &&
+    typeof esCliente === "function" &&
+    esCliente() &&
+    typeof loadClientReservas === "function"
+  ) {
+    loadClientReservas();
+  }
 }
+
 
 // Cambiar de pantalla con botones que tengan data-next="id"
 document.addEventListener("click", (event) => {

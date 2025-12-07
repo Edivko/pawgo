@@ -65,6 +65,24 @@ async function apiGetCaregiverReservas(idCuidador) {
   return resp.json(); // { ok, reservas }
 }
 
+// -------- RESERVAS CLIENTE --------
+async function apiGetClientReservas(idCliente) {
+  const resp = await fetch(`${API_URL}/api/clientes/${idCliente}/reservas`);
+  return resp.json(); // { ok, reservas }
+}
+
+async function apiCancelReserva(idReserva, idCliente, motivo) {
+  const resp = await fetch(
+    `${API_URL}/api/reservas/${idReserva}/cancelar`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_cliente: idCliente, motivo }),
+    }
+  );
+  return resp.json(); // { ok, message? }
+}
+
 
 // -------- SERVICIOS --------
 async function apiGetServicios() {

@@ -258,6 +258,129 @@ app.get('/api/cuidadores/:id/reservas', async (req, res) => {
   }
 });
 
+// ---------- RESERVAS DEL CLIENTE ----------
+app.get('/api/clientes/:id/reservas', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+         r.id_reserva,
+         r.estado,
+         r.fecha_creacion,
+         d.fecha,
+         d.hora_inicio,
+         d.hora_fin,
+         m.id_mascota,
+         m.nombre AS nombre_mascota,
+         m.tamano,
+         cu.id_usuario AS id_cuidador,
+         cu.nombre AS nombre_cuidador,
+         cu.apellidos AS apellidos_cuidador
+       FROM reservas r
+       JOIN disponibilidades d ON d.id_disponibilidad = r.id_disponibilidad
+       JOIN mascotas m ON m.id_mascota = r.id_mascota
+       JOIN usuarios cu ON cu.id_usuario = r.id_cuidador
+       WHERE r.id_cliente = ?
+         AND r.estado IN ('pendiente','confirmada')
+       ORDER BY d.fecha ASC, d.hora_inicio ASC`,
+      [id]
+    );
+
+    res.json({ ok: true, reservas: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      ok: false,
+      message: 'Error al obtener reservas del cliente',
+    });
+  }
+});
+
+// ---------- CANCELAR RESERVA (CLIENTE) ----------
+app.patch('/api/reservas/:id/cancelar', async (req, res) => {
+  const id_reserva = req.params.id;
+  const { id_cliente, motivo } = req.body || {};
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [rows] = await conn.execute(
+      `SELECT id_reserva, id_cliente, id_disponibilidad, estado
+       FROM reservas
+       WHERE id_reserva = ?`,
+      [id_reserva]
+    );
+
+    if (rows.length === 0) {
+      await conn.rollback();
+      return res
+        .status(404)
+        .json({ ok: false, message: 'Reserva no encontrada' });
+    }
+
+    const reserva = rows[0];
+
+    // Verificamos que la reserva sea de ese cliente (si nos mandó id_cliente)
+    if (
+      id_cliente &&
+      Number(id_cliente) &&
+      reserva.id_cliente !== Number(id_cliente)
+    ) {
+      await conn.rollback();
+      return res
+        .status(403)
+        .json({ ok: false, message: 'No puedes cancelar esta reserva' });
+    }
+
+    if (reserva.estado === 'cancelada') {
+      await conn.rollback();
+      return res
+        .status(400)
+        .json({ ok: false, message: 'La reserva ya está cancelada' });
+    }
+
+    if (reserva.estado === 'completada') {
+      await conn.rollback();
+      return res.status(400).json({
+        ok: false,
+        message: 'No se puede cancelar una reserva completada',
+      });
+    }
+
+    // 1) Marcar reserva como cancelada
+    await conn.execute(
+      `UPDATE reservas
+       SET estado = 'cancelada',
+           motivo_cancelacion = ?
+       WHERE id_reserva = ?`,
+      [motivo || null, id_reserva]
+    );
+
+    // 2) Liberar la disponibilidad asociada
+    await conn.execute(
+      `UPDATE disponibilidades
+       SET estado = 'libre'
+       WHERE id_disponibilidad = ?`,
+      [reserva.id_disponibilidad]
+    );
+
+    await conn.commit();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    await conn.rollback();
+    res.status(500).json({
+      ok: false,
+      message: 'Error al cancelar la reserva',
+    });
+  } finally {
+    conn.release();
+  }
+});
+
+
 // ---------- SERVICIOS ----------
 app.get('/api/servicios', async (req, res) => {
   try {
