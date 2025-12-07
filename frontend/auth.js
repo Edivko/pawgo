@@ -1,7 +1,9 @@
 // auth.js
 // Lógica de autenticación y manejo de nombre de usuario
 
+// Nombre y rol guardados en localStorage (si existen)
 currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
+currentUserRole = localStorage.getItem("pawgoUserRole") || "cliente";
 
 // Pone el nombre en "Bienvenido X"
 function renderWelcomeName() {
@@ -20,7 +22,9 @@ function goToScreen(id) {
     return;
   }
   // Fallback: manejar la clase .active aquí
-  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  document.querySelectorAll(".screen").forEach((s) =>
+    s.classList.remove("active")
+  );
   const target = document.getElementById(id);
   if (target) target.classList.add("active");
 }
@@ -39,6 +43,10 @@ if (btnRegister2 && formRegister1 && formRegister2) {
     const correo = formRegister1.correo.value.trim();
     const password = formRegister1.password.value.trim();
     const password2 = formRegister1.password2.value.trim();
+
+    // NUEVO: rol elegido (cliente / cuidador)
+    const rolInput = formRegister1.querySelector('input[name="rol"]:checked');
+    const rol = rolInput ? rolInput.value : "cliente";
 
     // ----- datos del form 2 -----
     const calle = formRegister2.calle.value.trim();
@@ -75,6 +83,7 @@ if (btnRegister2 && formRegister1 && formRegister2) {
         numExt,
         alcaldia,
         telefono,
+        rol, // 👈 se manda al backend
       });
 
       if (!resp.ok) {
@@ -82,15 +91,26 @@ if (btnRegister2 && formRegister1 && formRegister2) {
         return;
       }
 
+      // Guardar nombre
       currentUserName = resp.nombre || nombres;
       localStorage.setItem("pawgoUserName", currentUserName);
+
+      // Guardar id de usuario
       if (resp.userId) {
         localStorage.setItem("pawgoUserId", resp.userId);
       }
+
+      // NUEVO: guardar rol (lo que diga el backend, o el seleccionado)
+      currentUserRole = resp.rol || rol || "cliente";
+      localStorage.setItem("pawgoUserRole", currentUserRole);
+
       renderWelcomeName();
 
-      alert("Registro completado.");
-      goToScreen("screen-home");
+      alert(`Registro completado como ${currentUserRole}.`);
+      const nextScreen =
+        currentUserRole === "cuidador" ? "screen-caregiver-home" : "screen-home";
+      goToScreen(nextScreen);
+
     } catch (err) {
       console.error(err);
       alert("Error conectando con el servidor.");
@@ -121,18 +141,28 @@ if (formLogin) {
         return;
       }
 
+      // Nombre
       currentUserName = resp.nombre || correo.split("@")[0] || "Usuario";
       currentUserName =
         currentUserName.charAt(0).toUpperCase() + currentUserName.slice(1);
 
       localStorage.setItem("pawgoUserName", currentUserName);
+
+      // Id de usuario
       if (resp.userId) {
         localStorage.setItem("pawgoUserId", resp.userId);
       }
 
+      // NUEVO: rol devuelto por el backend
+      currentUserRole = resp.rol || "cliente";
+      localStorage.setItem("pawgoUserRole", currentUserRole);
+
       renderWelcomeName();
-      alert("Inicio de sesión exitoso.");
-      goToScreen("screen-home");
+      alert(`Inicio de sesión exitoso como ${currentUserRole}.`);
+      const nextScreen =
+        currentUserRole === "cuidador" ? "screen-caregiver-home" : "screen-home";
+      goToScreen(nextScreen);
+
     } catch (err) {
       console.error(err);
       alert("Ocurrió un error al iniciar sesión.");

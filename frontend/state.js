@@ -24,14 +24,28 @@ document.addEventListener("click", (event) => {
     showScreen(nextId);
 
     // Cuando el usuario entra a "Agendar Paseo"
-    if (nextId === "screen-schedule-walk" && typeof renderPetsSchedule === "function") {
+    if (
+      nextId === "screen-schedule-walk" &&
+      typeof renderPetsSchedule === "function"
+    ) {
       renderPetsSchedule();
     }
 
     // Cuando el usuario entra a "VIP Pets"
-    if (nextId === "screen-vip-pets" && typeof renderPetsVip === "function") {
+    if (
+      nextId === "screen-vip-pets" &&
+      typeof renderPetsVip === "function"
+    ) {
       renderPetsVip();
     }
+        // Cuando el usuario entra al Home de cuidador
+    if (
+      nextId === "screen-caregiver-home" &&
+      typeof loadCaregiverHome === "function"
+    ) {
+      loadCaregiverHome();
+    }
+
   }
 });
 
@@ -45,6 +59,18 @@ let selectedPetId = null;
 
 // Nombre del usuario actual
 let currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
+
+// Rol del usuario actual (cliente / cuidador / admin)
+let currentUserRole = localStorage.getItem("pawgoUserRole") || "cliente";
+
+// Helpers por si quieres usarlos en otros archivos
+function esCliente() {
+  return currentUserRole === "cliente";
+}
+
+function esCuidador() {
+  return currentUserRole === "cuidador";
+}
 
 // Inicialización al cargar el DOM
 document.addEventListener("DOMContentLoaded", () => {

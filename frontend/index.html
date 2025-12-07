@@ -80,6 +80,24 @@
               <input type="email" name="correo" placeholder="Ingresar correo" required />
             </label>
 
+            <!-- NUEVO: TIPO DE CUENTA -->
+            <p class="field-group-title">Tipo de cuenta</p>
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">
+                  <input type="radio" name="rol" value="cliente" checked />
+                  Cliente
+                </span>
+              </label>
+              <label class="field">
+                <span class="field-label">
+                  <input type="radio" name="rol" value="cuidador" />
+                  Cuidador
+                </span>
+              </label>
+            </div>
+            <!-- FIN NUEVO -->
+
             <label class="field">
               <span class="field-label">Contraseña</span>
               <input type="password" name="password" placeholder="Ingresar contraseña" required />
@@ -242,6 +260,77 @@
         </div>
       </section>
 
+            <!-- PANTALLA 5B: HOME CUIDADOR -->
+      <section id="screen-caregiver-home" class="screen">
+        <header class="screen-header home-header">
+          <div class="icon-btn">☰</div>
+          <button class="btn-outline-sm" data-next="screen-welcome">
+            Salir de la cuenta
+          </button>
+          <div class="icon-btn">🔔</div>
+        </header>
+
+        <div class="screen-content home-content">
+          <div class="home-welcome-row">
+            <h2 class="home-welcome">
+              Hola cuidador <span id="caregiver-name">Usuario</span>
+            </h2>
+            <div class="icon-btn person">🐶</div>
+          </div>
+
+          <!-- Perfil cuidador -->
+          <div class="card">
+            <h3 class="section-title">Tu perfil</h3>
+            <form id="form-caregiver-profile" novalidate>
+              <label class="field">
+                <span class="field-label">Descripción</span>
+                <textarea
+                  id="caregiver-descripcion"
+                  name="descripcion"
+                  rows="3"
+                  placeholder="Cuenta brevemente tu experiencia con mascotas"
+                ></textarea>
+              </label>
+
+              <div class="field-row">
+                <label class="field small">
+                  <span class="field-label">Experiencia (años)</span>
+                  <input
+                    type="number"
+                    id="caregiver-experiencia"
+                    name="experiencia_anios"
+                    min="0"
+                    placeholder="0"
+                  />
+                </label>
+                <label class="field small">
+                  <span class="field-label">Teléfono</span>
+                  <input
+                    type="tel"
+                    id="caregiver-telefono"
+                    name="telefono"
+                    placeholder="Número"
+                  />
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                Guardar perfil
+              </button>
+            </form>
+          </div>
+
+          <!-- Reservas del cuidador -->
+          <div class="card">
+            <h3 class="section-title">Tus próximos paseos</h3>
+            <div id="caregiver-reservas" class="reservas-list">
+              <!-- Aquí JS pondrá las reservas -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+
       <!-- PANTALLA 6: REGISTRAR MASCOTA -->
       <section id="screen-pet-register" class="screen">
         <header class="screen-header">
@@ -318,10 +407,9 @@
 
           <p class="subtitle-center">Seleccionar día</p>
 
-<div class="calendar-card">
-  <input type="date" id="walk-date" class="input-line" />
-</div>
-
+          <div class="calendar-card">
+            <input type="date" id="walk-date" class="input-line" />
+          </div>
 
           <button class="btn btn-primary" data-next="screen-vip-pets">
             Continuar
@@ -344,46 +432,27 @@
           <div class="pets-horizontal" id="pets-vip-container"></div>
 
           <form id="form-vip-walk" novalidate>
-            <label class="field">
-              <span class="field-label">Edad</span>
-              <input type="number" name="edadVip" placeholder="Ingresar número" />
-            </label>
+  <p class="field-group-title">Horario del paseo</p>
 
-            <label class="field">
-              <span class="field-label">Peso aproximado</span>
-              <input type="number" name="pesoVip" placeholder="Kg" />
-            </label>
+  <div class="field-row">
+    <label class="field">
+      <span class="field-label">Día</span>
+      <select name="diaVip" class="select-line">
+        <option value="">Selecciona horario</option>
+        <option value="manana">Mañana</option>
+        <option value="tarde">Tarde</option>
+      </select>
+    </label>
+  </div>
 
-            <label class="field">
-              <span class="field-label">Tamaño</span>
-              <input type="text" name="tamanoVip" placeholder="CH, M, G" />
-            </label>
+  <button type="submit" class="btn btn-primary">
+    Confirmar paseo
+  </button>
+</form>
 
-            <div class="field-row">
-              <label class="field">
-                <span class="field-label">Día</span>
-                <select name="diaVip" class="select-line">
-                  <option value="">H/M</option>
-                  <option value="manana">Mañana</option>
-                  <option value="tarde">Tarde</option>
-                </select>
-              </label>
-              <label class="field">
-                <span class="field-label">Esterilizado/Castrado</span>
-                <select name="esterilizadoVip" class="select-line">
-                  <option value="">SI/NO</option>
-                  <option value="si">Sí</option>
-                  <option value="no">No</option>
-                </select>
-              </label>
-            </div>
-
-            <button type="submit" class="btn btn-primary">
-              Confirmar paseo
-            </button>
-          </form>
         </div>
       </section>
+
       <!-- PANTALLA 9: PASEO CONFIRMADO -->
       <section id="screen-walk-confirmed" class="screen">
         <header class="screen-header">
@@ -412,5 +481,7 @@
   <script src="auth.js"></script>
   <script src="pets.js"></script>
   <script src="map.js"></script>
+  <script src="caregiver.js"></script>
+
 </body>
 </html>

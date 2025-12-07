@@ -35,6 +35,7 @@ app.post('/api/register', async (req, res) => {
     numExt,
     alcaldia,
     telefono,
+    rol,          
   } = req.body;
 
   if (!nombres || !apellidoP || !correo || !password || !calle || !cp || !numExt) {
@@ -43,18 +44,37 @@ app.post('/api/register', async (req, res) => {
 
   const apellidos = `${apellidoP} ${apellidoM || ''}`.trim();
 
+  // Normalizamos el rol para que siempre sea válido para la BD
+  let rolDb = 'cliente';
+  if (rol === 'cuidador') {
+    rolDb = 'cuidador';
+  } else if (rol === 'admin') {
+    rolDb = 'admin';
+  }
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
+    // Insertar usuario con rol
     const [userResult] = await conn.execute(
-      `INSERT INTO usuarios (nombre, apellidos, email, password_hash, telefono)
-       VALUES (?, ?, ?, ?, ?)`,
-      [nombres, apellidos, correo, password, telefono || null]
+      `INSERT INTO usuarios (nombre, apellidos, email, password_hash, telefono, rol)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [nombres, apellidos, correo, password, telefono || null, rolDb]
     );
 
     const userId = userResult.insertId;
 
+    // Si es cuidador, crear también su perfil vacío en cuidadores_perfil
+    if (rolDb === 'cuidador') {
+      await conn.execute(
+        `INSERT INTO cuidadores_perfil (id_cuidador)
+         VALUES (?)`,
+        [userId]
+      );
+    }
+
+    // Insertar dirección principal
     await conn.execute(
       `INSERT INTO direcciones
        (id_usuario, calle, numero_ext, numero_int, colonia, cp, es_principal)
@@ -64,7 +84,7 @@ app.post('/api/register', async (req, res) => {
 
     await conn.commit();
 
-    res.json({ ok: true, userId, nombre: nombres });
+    res.json({ ok: true, userId, nombre: nombres, rol: rolDb });
   } catch (err) {
     console.error(err);
     await conn.rollback();
@@ -97,12 +117,126 @@ app.post('/api/login', async (req, res) => {
       userId: user.id_usuario,
       nombre: user.nombre,
       email: user.email,
+      rol: user.rol,   // 👈 NUEVO: devolvemos el rol al front
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, message: 'Error en login' });
   }
 });
+
+// ---------- PERFIL CUIDADOR ----------
+app.get('/api/cuidadores/:id/perfil', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+         u.id_usuario,
+         u.nombre,
+         u.apellidos,
+         u.email,
+         u.telefono,
+         u.rating_promedio,
+         u.total_servicios,
+         cp.descripcion,
+         cp.experiencia_anios,
+         cp.verificado
+       FROM usuarios u
+       LEFT JOIN cuidadores_perfil cp ON cp.id_cuidador = u.id_usuario
+       WHERE u.id_usuario = ? AND u.rol = 'cuidador'`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ ok: false, message: 'Cuidador no encontrado' });
+    }
+
+    res.json({ ok: true, perfil: rows[0] });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ ok: false, message: 'Error al obtener perfil de cuidador' });
+  }
+});
+
+app.put('/api/cuidadores/:id/perfil', async (req, res) => {
+  const id = req.params.id;
+  const { descripcion, experiencia_anios, telefono } = req.body;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // actualizar teléfono en usuarios (opcional)
+    if (telefono !== undefined) {
+      await conn.execute(
+        'UPDATE usuarios SET telefono = ? WHERE id_usuario = ? AND rol = "cuidador"',
+        [telefono || null, id]
+      );
+    }
+
+    // actualizar perfil en cuidadores_perfil
+    await conn.execute(
+      `UPDATE cuidadores_perfil
+       SET descripcion = ?, experiencia_anios = ?
+       WHERE id_cuidador = ?`,
+      [descripcion || null, experiencia_anios || 0, id]
+    );
+
+    await conn.commit();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    await conn.rollback();
+    res
+      .status(500)
+      .json({ ok: false, message: 'Error al actualizar perfil de cuidador' });
+  } finally {
+    conn.release();
+  }
+});
+
+// ---------- RESERVAS DEL CUIDADOR ----------
+app.get('/api/cuidadores/:id/reservas', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+         r.id_reserva,
+         r.estado,
+         r.fecha_creacion,
+         d.fecha,
+         d.hora_inicio,
+         d.hora_fin,
+         m.id_mascota,
+         m.nombre AS nombre_mascota,
+         m.tamano,
+         c.id_usuario AS id_cliente,
+         c.nombre AS nombre_cliente,
+         c.apellidos AS apellidos_cliente
+       FROM reservas r
+       JOIN disponibilidades d ON d.id_disponibilidad = r.id_disponibilidad
+       JOIN mascotas m ON m.id_mascota = r.id_mascota
+       JOIN usuarios c ON c.id_usuario = r.id_cliente
+       WHERE r.id_cuidador = ?
+       ORDER BY d.fecha ASC, d.hora_inicio ASC`,
+      [id]
+    );
+
+    res.json({ ok: true, reservas: rows });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ ok: false, message: 'Error al obtener reservas del cuidador' });
+  }
+});
+
 
 // ---------- HELPERS ----------
 function normalizarTamano(t) {
@@ -171,17 +305,16 @@ app.post('/api/mascotas', async (req, res) => {
   }
 });
 
+
 // ---------- CREAR RESERVA DE PASEO ----------
 app.post('/api/reservas', async (req, res) => {
   const { id_cliente, id_mascota, fecha, diaVip } = req.body;
 
   if (!id_cliente || !id_mascota || !fecha) {
-    return res.status(400).json({ ok: false, message: 'Faltan datos para la reserva' });
+    return res
+      .status(400)
+      .json({ ok: false, message: 'Faltan datos para la reserva' });
   }
-
-  // Por ahora usamos un cuidador fijo (id 2) y servicio fijo (id 1)
-  const id_cuidador = 2;
-  const id_servicio = 1;
 
   const { hora_inicio, hora_fin } = mapSlot(diaVip);
 
@@ -189,7 +322,25 @@ app.post('/api/reservas', async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Crear una disponibilidad asociada a esta reserva
+    // 1) Elegimos un cuidador existente (por ahora el primero que haya)
+    const [cuidadorRows] = await conn.execute(
+      'SELECT id_cuidador FROM cuidadores_perfil ORDER BY id_cuidador ASC LIMIT 1'
+    );
+
+    if (cuidadorRows.length === 0) {
+      await conn.rollback();
+      return res.status(400).json({
+        ok: false,
+        message: 'No hay cuidadores registrados en el sistema.',
+      });
+    }
+
+    const id_cuidador = cuidadorRows[0].id_cuidador;
+
+    // 2) Servicio fijo por ahora (puedes cambiarlo luego)
+    const id_servicio = 1;
+
+    // 3) Crear una disponibilidad asociada a esta reserva
     const [dispResult] = await conn.execute(
       `INSERT INTO disponibilidades (id_cuidador, fecha, hora_inicio, hora_fin, estado)
        VALUES (?, ?, ?, ?, 'reservado')`,
@@ -197,7 +348,7 @@ app.post('/api/reservas', async (req, res) => {
     );
     const id_disponibilidad = dispResult.insertId;
 
-    // Crear la reserva
+    // 4) Crear la reserva
     const [resResult] = await conn.execute(
       `INSERT INTO reservas (id_cliente, id_cuidador, id_mascota, id_servicio, id_disponibilidad, estado)
        VALUES (?, ?, ?, ?, ?, 'confirmada')`,
