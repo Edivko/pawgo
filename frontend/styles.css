@@ -410,3 +410,290 @@ body {
   color: #555;
   max-width: 260px;
 }
+/* ============================================
+   MODIFICACIONES SOLICITADAS
+   ============================================ */
+
+/* 1. ESTILO PARA LA NUEVA IMAGEN DEL LOGO */
+.pawgo-logo {
+  width: 180px; /* Ajusta según necesites */
+  height: 180px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E3F8FA, #A8E1DE);
+  padding: 15px;
+  box-shadow: 0 8px 20px rgba(99, 191, 202, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.pawgo-logo:hover {
+  transform: scale(1.05);
+}
+
+/* Elimina o comenta el logo anterior si existe */
+.logo-paws {
+  display: none;
+}
+
+/* 2. DEGRADADOS CON TU PALETA DE COLORES */
+
+/* Fondo general con degradado sutil */
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #E3F8FA 0%, #A8E1DE 50%, #85D5D1 100%);
+  padding: 20px;
+}
+
+/* Marco del teléfono con degradado */
+.phone-frame {
+  width: min(430px, 100vw - 32px);
+  height: 100vh;
+  max-height: 932px;
+  background: linear-gradient(to bottom, #ffffff, #f8fdff);
+  border-radius: 32px;
+  box-shadow: 0 15px 40px rgba(99, 191, 202, 0.25),
+              0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Efecto de brillo en el borde del teléfono */
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #85D5D1, #63BFCA, #85D5D1);
+  border-radius: 32px 32px 0 0;
+  z-index: 10;
+}
+
+/* 3. BOTONES CON HOVER Y DEGRADADO */
+
+/* Botón principal con tu paleta */
+.btn-primary {
+  background: linear-gradient(135deg, #63BFCA 0%, #85D5D1 100%);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 191, 202, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efecto hover - se oscurece un poco */
+.btn-primary:hover {
+  background: linear-gradient(135deg, #55aab4 0%, #73c4c0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(99, 191, 202, 0.4);
+}
+
+/* Efecto activo/presionado */
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(99, 191, 202, 0.3);
+}
+
+/* Botón outline con hover */
+.btn-outline-sm {
+  border-radius: 999px;
+  border: 2px solid #85D5D1;
+  background: transparent;
+  color: #63BFCA;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-sm:hover {
+  background: rgba(133, 213, 209, 0.1);
+  border-color: #63BFCA;
+  transform: translateY(-1px);
+}
+
+/* Botones redondos */
+.icon-round {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 2px solid #A8E1DE;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.icon-round:hover {
+  background: linear-gradient(135deg, #A8E1DE, #85D5D1);
+  color: white;
+  border-color: #63BFCA;
+  transform: scale(1.1);
+}
+
+/* Botón de regresar */
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(133, 213, 209, 0.15);
+  font-size: 20px;
+  cursor: pointer;
+  color: #63BFCA;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn:hover {
+  background: rgba(99, 191, 202, 0.25);
+  transform: translateX(-2px);
+}
+
+/* Botones de iconos en header */
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: rgba(133, 213, 209, 0.1);
+  color: #63BFCA;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: rgba(99, 191, 202, 0.2);
+  transform: scale(1.1);
+}
+
+/* 4. MEJORAS VISUALES ADICIONALES SIN CAMBIAR ESTRUCTURA */
+
+/* Encabezados con color de tu paleta */
+.app-title {
+  color: #63BFCA;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.screen-title {
+  color: #4a9ba6;
+}
+
+/* Inputs con bordes de la paleta */
+.field input:focus,
+.select-line:focus,
+.input-line:focus {
+  border-color: #85D5D1;
+  box-shadow: 0 0 0 3px rgba(133, 213, 209, 0.2);
+}
+
+/* Tarjeta del mapa con borde degradado */
+.map-card {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #A8E1DE, #85D5D1) border-box;
+}
+
+/* Tarjetas de mascotas con hover */
+.pet-chip {
+  background: linear-gradient(135deg, #85D5D1, #63BFCA);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(99, 191, 202, 0.3);
+}
+
+.pet-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(99, 191, 202, 0.4);
+}
+
+.pet-chip.selected {
+  background: linear-gradient(135deg, #63BFCA, #4a9ba6);
+  box-shadow: 0 5px 15px rgba(99, 191, 202, 0.5);
+}
+
+/* Calendario con toques de color */
+.calendar-card {
+  border: 2px solid #A8E1DE;
+  background: rgba(232, 248, 250, 0.5);
+}
+
+/* Texto legal con fondo sutil */
+.legal-text {
+  background: rgba(227, 248, 250, 0.7);
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid #85D5D1;
+}
+
+/* Efecto de onda en botones al hacer hover (opcional) */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn-primary:hover::after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Responsive para pantallas muy pequeñas */
+@media (max-width: 380px) {
+  .pawgo-logo {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .phone-frame {
+    border-radius: 24px;
+  }
+}
