@@ -258,6 +258,7 @@ app.get("/api/cuidadores/:id/reservas", async (req, res) => {
        JOIN mascotas m ON m.id_mascota = r.id_mascota
        JOIN usuarios c ON c.id_usuario = r.id_cliente
        WHERE r.id_cuidador = ?
+         AND r.estado IN ('pendiente','confirmada')
        ORDER BY d.fecha ASC, d.hora_inicio ASC`,
       [id]
     );
@@ -268,6 +269,210 @@ app.get("/api/cuidadores/:id/reservas", async (req, res) => {
     res
       .status(500)
       .json({ ok: false, message: "Error al obtener reservas del cuidador" });
+  }
+});
+
+// ---------- PASEOS DISPONIBLES (SIN CUIDADOR ASIGNADO) ----------
+// Esto permite que, cuando un cliente agenda/solicita un paseo, se vea por TODOS los cuidadores
+// y cualquiera pueda aceptarlo. Una vez aceptado, deja de aparecer aquí.
+app.get("/api/paseos/disponibles", async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT 
+         r.id_reserva,
+         r.estado,
+         r.fecha_creacion,
+         d.fecha,
+         d.hora_inicio,
+         d.hora_fin,
+         m.id_mascota,
+         m.nombre AS nombre_mascota,
+         m.tamano,
+         c.id_usuario AS id_cliente,
+         c.nombre AS nombre_cliente,
+         c.apellidos AS apellidos_cliente
+       FROM reservas r
+       JOIN disponibilidades d ON d.id_disponibilidad = r.id_disponibilidad
+       JOIN mascotas m ON m.id_mascota = r.id_mascota
+       JOIN usuarios c ON c.id_usuario = r.id_cliente
+       WHERE r.estado = 'pendiente'
+         AND (r.id_cuidador IS NULL OR r.id_cuidador = 0)
+       ORDER BY d.fecha ASC, d.hora_inicio ASC`
+    );
+
+    res.json({ ok: true, reservas: rows });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ ok: false, message: "Error al obtener paseos disponibles" });
+  }
+});
+
+// ---------- ACEPTAR PASEO (CUIDADOR) ----------
+// Evita carreras: solo 1 cuidador puede aceptar (UPDATE condicional dentro de transacción).
+app.patch("/api/reservas/:id/aceptar", async (req, res) => {
+  const id_reserva = Number(req.params.id);
+  const { id_cuidador } = req.body || {};
+
+  if (!id_reserva || !id_cuidador) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "Faltan datos para aceptar" });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [rows] = await conn.execute(
+      `SELECT id_reserva, id_disponibilidad, estado, id_cuidador
+       FROM reservas
+       WHERE id_reserva = ?
+       FOR UPDATE`,
+      [id_reserva]
+    );
+
+    if (rows.length === 0) {
+      await conn.rollback();
+      return res
+        .status(404)
+        .json({ ok: false, message: "Reserva no encontrada" });
+    }
+
+    const r = rows[0];
+
+    if (r.estado !== "pendiente") {
+      await conn.rollback();
+      return res.status(400).json({
+        ok: false,
+        message: "Este paseo ya no está disponible para aceptar",
+      });
+    }
+
+    if (r.id_cuidador !== null && Number(r.id_cuidador) !== 0) {
+      await conn.rollback();
+      return res.status(409).json({
+        ok: false,
+        message: "Este paseo ya fue aceptado por otro cuidador",
+      });
+    }
+
+    // 1) Asignar cuidador y confirmar
+    const [uRes] = await conn.execute(
+      `UPDATE reservas
+       SET id_cuidador = ?, estado = 'confirmada'
+       WHERE id_reserva = ?
+         AND estado = 'pendiente'
+         AND (id_cuidador IS NULL OR id_cuidador = 0)`,
+      [id_cuidador, id_reserva]
+    );
+
+    if (uRes.affectedRows === 0) {
+      await conn.rollback();
+      return res.status(409).json({
+        ok: false,
+        message: "Este paseo ya fue aceptado por otro cuidador",
+      });
+    }
+
+    // 2) Asociar la disponibilidad a ese cuidador (para que sus listas/join sigan funcionando)
+    await conn.execute(
+      `UPDATE disponibilidades
+       SET id_cuidador = ?, estado = 'reservado'
+       WHERE id_disponibilidad = ?`,
+      [id_cuidador, r.id_disponibilidad]
+    );
+
+    await conn.commit();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    await conn.rollback();
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al aceptar el paseo" });
+  } finally {
+    conn.release();
+  }
+});
+
+// ---------- CANCELAR PASEO (CUIDADOR) ----------
+// Regresa el paseo a estado pendiente y sin cuidador para que vuelva a aparecer a los demás.
+app.patch("/api/reservas/:id/cancelar-cuidador", async (req, res) => {
+  const id_reserva = Number(req.params.id);
+  const { id_cuidador, motivo } = req.body || {};
+
+  if (!id_reserva || !id_cuidador) {
+    return res
+      .status(400)
+      .json({ ok: false, message: "Faltan datos para cancelar" });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [rows] = await conn.execute(
+      `SELECT id_reserva, id_cuidador, id_disponibilidad, estado
+       FROM reservas
+       WHERE id_reserva = ?
+       FOR UPDATE`,
+      [id_reserva]
+    );
+
+    if (rows.length === 0) {
+      await conn.rollback();
+      return res
+        .status(404)
+        .json({ ok: false, message: "Reserva no encontrada" });
+    }
+
+    const r = rows[0];
+
+    if (Number(r.id_cuidador) !== Number(id_cuidador)) {
+      await conn.rollback();
+      return res
+        .status(403)
+        .json({ ok: false, message: "No puedes cancelar este paseo" });
+    }
+
+    if (r.estado === "cancelada" || r.estado === "completada") {
+      await conn.rollback();
+      return res.status(400).json({
+        ok: false,
+        message: "No se puede cancelar un paseo cancelado o completado",
+      });
+    }
+
+    // 1) Quitar cuidador y regresar a pendiente
+    await conn.execute(
+      `UPDATE reservas
+       SET estado = 'pendiente',
+           id_cuidador = NULL,
+           motivo_cancelacion = ?
+       WHERE id_reserva = ?`,
+      [motivo || "Cancelado por el cuidador", id_reserva]
+    );
+
+    // 2) Regresar disponibilidad a "sin cuidador" (mantener reservado, porque sigue siendo un paseo solicitado)
+    await conn.execute(
+      `UPDATE disponibilidades
+       SET id_cuidador = NULL, estado = 'reservado'
+       WHERE id_disponibilidad = ?`,
+      [r.id_disponibilidad]
+    );
+
+    await conn.commit();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    await conn.rollback();
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al cancelar el paseo" });
+  } finally {
+    conn.release();
   }
 });
 
@@ -293,7 +498,7 @@ app.get("/api/clientes/:id/reservas", async (req, res) => {
        FROM reservas r
        JOIN disponibilidades d ON d.id_disponibilidad = r.id_disponibilidad
        JOIN mascotas m ON m.id_mascota = r.id_mascota
-       JOIN usuarios cu ON cu.id_usuario = r.id_cuidador
+       LEFT JOIN usuarios cu ON cu.id_usuario = r.id_cuidador
        WHERE r.id_cliente = ?
          AND r.estado IN ('pendiente','confirmada')
        ORDER BY d.fecha ASC, d.hora_inicio ASC`,
@@ -612,35 +817,24 @@ app.post("/api/reservas", async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Elegimos un cuidador (por ahora el primero que exista)
-    const [cuidadorRows] = await conn.execute(
-      "SELECT id_cuidador FROM cuidadores_perfil ORDER BY id_cuidador ASC LIMIT 1"
-    );
-    if (cuidadorRows.length === 0) {
-      await conn.rollback();
-      return res.status(400).json({
-        ok: false,
-        message: "No hay cuidadores registrados en el sistema.",
-      });
-    }
-    const id_cuidador = cuidadorRows[0].id_cuidador;
-
     // Servicio fijo por ahora
     const id_servicio = 1;
 
-    // Crear una disponibilidad asociada a esta reserva
+    // Crear una disponibilidad asociada a esta reserva.
+    // Importante: aún NO hay cuidador asignado, porque el paseo se publica para todos los cuidadores.
+    // (Recomendación BD: permitir NULL en disponibilidades.id_cuidador y reservas.id_cuidador)
     const [dispResult] = await conn.execute(
       `INSERT INTO disponibilidades (id_cuidador, fecha, hora_inicio, hora_fin, estado)
-       VALUES (?, ?, ?, ?, 'reservado')`,
-      [id_cuidador, fecha, hora_inicio, hora_fin]
+       VALUES (NULL, ?, ?, ?, 'reservado')`,
+      [fecha, hora_inicio, hora_fin]
     );
     const id_disponibilidad = dispResult.insertId;
 
     // Crear la reserva
     const [resResult] = await conn.execute(
       `INSERT INTO reservas (id_cliente, id_cuidador, id_mascota, id_servicio, id_disponibilidad, estado)
-       VALUES (?, ?, ?, ?, ?, 'confirmada')`,
-      [id_cliente, id_cuidador, id_mascota, id_servicio, id_disponibilidad]
+       VALUES (?, NULL, ?, ?, ?, 'pendiente')`,
+      [id_cliente, id_mascota, id_servicio, id_disponibilidad]
     );
 
     await conn.commit();

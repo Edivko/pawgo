@@ -255,14 +255,14 @@ document.addEventListener("click", (e) => {
 
         const confirmedTextEl = document.getElementById("confirmed-text");
         if (confirmedTextEl) {
-          let text = "Tu paseo ha sido agendado correctamente.";
+          let text = "Tu paseo fue solicitado. En cuanto un cuidador lo acepte, te aparecerá asignado en tus paseos.";
           if (pet || dateValue) {
-            text = "Hemos agendado el paseo";
+            text = "Hemos registrado tu solicitud de paseo";
             if (pet) text += ` para ${pet.name}`;
             if (dateValue) text += ` el ${dateValue}`;
             if (diaVip === "manana") text += " por la mañana";
             else if (diaVip === "tarde") text += " por la tarde";
-            text += ".";
+            text += ". En cuanto un cuidador lo acepte, te aparecerá asignado.";
           }
           confirmedTextEl.textContent = text;
         }

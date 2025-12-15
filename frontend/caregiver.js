@@ -44,12 +44,47 @@ function buildReservaCard(r) {
     r.apellidos_cliente || ""
   }`.trim();
 
+  const puedeCancelar = r.estado === "pendiente" || r.estado === "confirmada";
+
   return `
     <div class="card reserva-card">
       <p><strong>${fecha}</strong> ${horaInicio} - ${horaFin}</p>
       <p>Mascota: ${r.nombre_mascota} (${r.tamano})</p>
       <p>Cliente: ${nombreCliente}</p>
       <p>Estado: ${r.estado}</p>
+      ${
+        puedeCancelar
+          ? `<button type="button"
+                     class="btn-outline-sm btn-cancel-reserva-caregiver"
+                     data-reserva-id="${r.id_reserva}">
+               Cancelar paseo
+             </button>`
+          : ""
+      }
+    </div>
+  `;
+}
+
+// -------- tarjetas de paseos disponibles (sin cuidador asignado) --------
+function buildDisponibleCard(r) {
+  const fecha = (r.fecha || "").slice(0, 10);
+  const horaInicio = (r.hora_inicio || "").slice(0, 5);
+  const horaFin = (r.hora_fin || "").slice(0, 5);
+  const nombreCliente = `${r.nombre_cliente || ""} ${
+    r.apellidos_cliente || ""
+  }`.trim();
+
+  return `
+    <div class="card reserva-card">
+      <p><strong>${fecha}</strong> ${horaInicio} - ${horaFin}</p>
+      <p>Mascota: ${r.nombre_mascota} (${r.tamano})</p>
+      <p>Cliente: ${nombreCliente}</p>
+      <p>Estado: ${r.estado}</p>
+      <button type="button"
+              class="btn btn-primary btn-accept-reserva"
+              data-reserva-id="${r.id_reserva}">
+        Aceptar paseo
+      </button>
     </div>
   `;
 }
@@ -65,10 +100,11 @@ async function loadCaregiverHome() {
   }
 
   try {
-    const [perfilResp, reservasResp, tarifasResp] = await Promise.all([
+    const [perfilResp, reservasResp, tarifasResp, disponiblesResp] = await Promise.all([
       apiGetCaregiverProfile(id),
       apiGetCaregiverReservas(id),
       apiGetCaregiverTarifas(id),
+      apiGetPaseosDisponibles(),
     ]);
 
     // ---- Perfil ----
@@ -132,6 +168,19 @@ async function loadCaregiverHome() {
       }
     }
 
+    // ---- Paseos disponibles ----
+    const contDisp = document.getElementById("caregiver-available-reservas");
+    if (contDisp) {
+      contDisp.innerHTML = "";
+      const list = disponiblesResp && disponiblesResp.ok ? (disponiblesResp.reservas || []) : [];
+
+      if (list.length > 0) {
+        contDisp.innerHTML = list.map((r) => buildDisponibleCard(r)).join("");
+      } else {
+        contDisp.innerHTML = "<p class=\"muted\">No hay paseos disponibles.</p>";
+      }
+    }
+
     // Después de cargar datos, dejamos todo en modo solo lectura
     setProfileEditing(false);
     setTarifasEditing(false);
@@ -139,6 +188,64 @@ async function loadCaregiverHome() {
     console.error(err);
   }
 }
+
+// Delegación: aceptar / cancelar paseos (cuidador)
+document.addEventListener("click", async (e) => {
+  // Aceptar
+  const acceptBtn = e.target.closest(".btn-accept-reserva");
+  if (acceptBtn) {
+    const idReserva = acceptBtn.getAttribute("data-reserva-id");
+    const idCuidador = localStorage.getItem("pawgoUserId");
+    if (!idReserva || !idCuidador) return;
+
+    const ok = window.confirm("¿Aceptar este paseo?");
+    if (!ok) return;
+
+    try {
+      const resp = await apiAcceptReserva(idReserva, idCuidador);
+      if (!resp.ok) {
+        alert(resp.message || "No se pudo aceptar el paseo.");
+        return;
+      }
+      alert("Paseo aceptado.");
+      loadCaregiverHome();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al aceptar el paseo.");
+    }
+    return;
+  }
+
+  // Cancelar (cuando el paseo ya era del cuidador)
+  const cancelBtn = e.target.closest(".btn-cancel-reserva-caregiver");
+  if (cancelBtn) {
+    const idReserva = cancelBtn.getAttribute("data-reserva-id");
+    const idCuidador = localStorage.getItem("pawgoUserId");
+    if (!idReserva || !idCuidador) return;
+
+    const ok = window.confirm(
+      "¿Seguro que quieres cancelar este paseo? Volverá a estar disponible para otros cuidadores."
+    );
+    if (!ok) return;
+
+    try {
+      const resp = await apiCancelReservaCuidador(
+        idReserva,
+        idCuidador,
+        "Cancelado por el cuidador"
+      );
+      if (!resp.ok) {
+        alert(resp.message || "No se pudo cancelar el paseo.");
+        return;
+      }
+      alert("Paseo cancelado.");
+      loadCaregiverHome();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al cancelar el paseo.");
+    }
+  }
+});
 
 // -------- listeners de DOM --------
 document.addEventListener("DOMContentLoaded", () => {

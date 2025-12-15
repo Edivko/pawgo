@@ -7,6 +7,7 @@ function buildClientReservaCard(r) {
   const nombreCuidador = `${r.nombre_cuidador || ""} ${
     r.apellidos_cuidador || ""
   }`.trim();
+  const cuidadorLabel = nombreCuidador ? nombreCuidador : "Pendiente de asignación";
   const estado = r.estado;
 
   // Solo se puede cancelar si está pendiente o confirmada
@@ -17,7 +18,7 @@ function buildClientReservaCard(r) {
     <div class="card reserva-card">
       <p><strong>${fecha}</strong> ${horaInicio} - ${horaFin}</p>
       <p>Mascota: ${r.nombre_mascota} (${r.tamano})</p>
-      <p>Cuidador: ${nombreCuidador}</p>
+      <p>Cuidador: ${cuidadorLabel}</p>
       <p>Estado: ${estado}</p>
       ${
         puedeCancelar

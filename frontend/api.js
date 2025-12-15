@@ -65,6 +65,33 @@ async function apiGetCaregiverReservas(idCuidador) {
   return resp.json(); // { ok, reservas }
 }
 
+// -------- PASEOS DISPONIBLES (PARA CUIDADORES) --------
+async function apiGetPaseosDisponibles() {
+  const resp = await fetch(`${API_URL}/api/paseos/disponibles`);
+  return resp.json(); // { ok, reservas }
+}
+
+async function apiAcceptReserva(idReserva, idCuidador) {
+  const resp = await fetch(`${API_URL}/api/reservas/${idReserva}/aceptar`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_cuidador: idCuidador }),
+  });
+  return resp.json(); // { ok, message? }
+}
+
+async function apiCancelReservaCuidador(idReserva, idCuidador, motivo) {
+  const resp = await fetch(
+    `${API_URL}/api/reservas/${idReserva}/cancelar-cuidador`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_cuidador: idCuidador, motivo }),
+    }
+  );
+  return resp.json(); // { ok, message? }
+}
+
 // -------- RESERVAS CLIENTE --------
 async function apiGetClientReservas(idCliente) {
   const resp = await fetch(`${API_URL}/api/clientes/${idCliente}/reservas`);
