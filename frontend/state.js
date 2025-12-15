@@ -40,22 +40,21 @@ function showScreen(id) {
     loadClientReservas();
   }
   if (
-  id === "screen-notifications" &&
-  typeof renderNotificationsScreen === "function"
-) {
-  renderNotificationsScreen();
+    id === "screen-notifications" &&
+    typeof renderNotificationsScreen === "function"
+  ) {
+    renderNotificationsScreen();
+  }
+  if (id === "screen-profile" && typeof renderProfile === "function") {
+    renderProfile();
+  }
+  if (id === "screen-home" && window.Pets) {
+    window.Pets.refresh();
+  }
+  if (id === "screen-pet-settings" && typeof renderPetSettings === "function") {
+    renderPetSettings();
+  }
 }
-if (id === "screen-profile" && typeof renderProfile === "function") {
-  renderProfile();
-}
-if (id === "screen-home" && window.Pets) {
-  window.Pets.refresh();
-}
-
-
-
-}
-
 
 // Cambiar de pantalla con botones que tengan data-next="id"
 document.addEventListener("click", (event) => {
@@ -76,20 +75,16 @@ document.addEventListener("click", (event) => {
     }
 
     // Cuando el usuario entra a "VIP Pets"
-    if (
-      nextId === "screen-vip-pets" &&
-      typeof renderPetsVip === "function"
-    ) {
+    if (nextId === "screen-vip-pets" && typeof renderPetsVip === "function") {
       renderPetsVip();
     }
-        // Cuando el usuario entra al Home de cuidador
+    // Cuando el usuario entra al Home de cuidador
     if (
       nextId === "screen-caregiver-home" &&
       typeof loadCaregiverHome === "function"
     ) {
       loadCaregiverHome();
     }
-
   }
 });
 
@@ -118,3 +113,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+function initSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const openBtn = document.getElementById("btn-open-sidebar");
+  const closeBtn = document.getElementById("btn-close-sidebar");
+
+  if (!sidebar || !overlay || !openBtn) return;
+
+  const open = () => {
+    sidebar.classList.remove("hidden");
+    overlay.classList.remove("hidden");
+    sidebar.setAttribute("aria-hidden", "false");
+  };
+
+  const close = () => {
+    sidebar.classList.add("hidden");
+    overlay.classList.add("hidden");
+    sidebar.setAttribute("aria-hidden", "true");
+  };
+
+  openBtn.addEventListener("click", open);
+  overlay.addEventListener("click", close);
+  closeBtn?.addEventListener("click", close);
+
+  // Cerrar sidebar al hacer click en un botón que navega
+  sidebar.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-next]");
+    if (btn) close();
+  });
+
+  // ESC cierra
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initSidebar();
+});

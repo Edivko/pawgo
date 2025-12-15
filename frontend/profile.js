@@ -93,21 +93,62 @@ function renderClienteProfile(container) {
     </div>
   `;
 
-  container.querySelector("#btn-save-profile")?.addEventListener("click", () => {
-    const data = Object.fromEntries(
-      Array.from(container.querySelectorAll("input[name]")).map(i => [i.name, i.value.trim()])
-    );
+container.querySelector("#btn-save-profile")?.addEventListener("click", async () => {
+  const userId = localStorage.getItem("pawgoUserId");
+  if (!userId) {
+    alert("Primero inicia sesión.");
+    return;
+  }
 
-    // preserva correo (disabled no entra en querySelectorAll si no lo incluyes)
-    data.correo = p.correo || "";
+  const data = Object.fromEntries(
+    Array.from(container.querySelectorAll("input[name]")).map(i => [i.name, i.value.trim()])
+  );
 
+  // correo viene disabled
+  data.correo = p.correo || "";
+
+  // Payload hacia backend (mismo “modelo” que usa tu UI)
+  const payload = {
+    nombres: data.nombres || "",
+    apellidoP: data.apellidoP || "",
+    apellidoM: data.apellidoM || "",
+    telefono: data.telefono || "",
+    calle: data.calle || "",
+    cp: data.cp || "",
+    numInt: data.numInt || "",
+    numExt: data.numExt || "",
+    alcaldia: data.alcaldia || "",
+  };
+
+  if (!payload.nombres.trim()) {
+    alert("El nombre es obligatorio.");
+    return;
+  }
+
+  try {
+    const resp = await apiUpdateProfile(userId, payload);
+    if (!resp.ok) {
+      alert(resp.message || "No se pudo guardar el perfil.");
+      return;
+    }
+
+    // 1) Mantén tu storage actual (para no romper nada)
     setUserProfile({ ...p, ...data });
 
-    // sincroniza nombre global que ya usas en home
-    if (data.nombres) localStorage.setItem("pawgoUserName", data.nombres);
+    // 2) Refresca nombre global del Home
+    localStorage.setItem("pawgoUserName", payload.nombres);
 
-    alert("Perfil de cliente guardado");
-  });
+    // 3) Actualiza UI de bienvenida si existe
+    const el = document.getElementById("welcome-username");
+    if (el) el.textContent = payload.nombres;
+
+    alert("Perfil actualizado.");
+  } catch (err) {
+    console.error(err);
+    alert("Error conectando con el servidor.");
+  }
+});
+
 }
 
 function renderCuidadorProfile(container) {

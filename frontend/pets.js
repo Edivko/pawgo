@@ -27,11 +27,13 @@
     pets.forEach((pet) => {
       const row = document.createElement("div");
       row.className = "pet-row";
-      row.innerHTML = `
-        <span class="pet-icon">🐶</span>
-        <button class="pet-chip">${pet.name}</button>
-        <button class="icon-round">⚙️</button>
-      `;
+row.innerHTML = `
+  <span class="pet-icon">🐶</span>
+  <button class="pet-chip">${pet.name}</button>
+  <button class="icon-round btn-pet-settings" data-pet-id="${pet.id}">⚙️</button>
+`;
+
+
       petsContainer.appendChild(row);
     });
   }
@@ -144,6 +146,20 @@
     renderPetsSchedule();
     renderPetsVip();
   });
+  // Configuración: guardar mascota y navegar (en orden correcto)
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-pet-settings");
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const petId = Number(btn.dataset.petId);
+  localStorage.setItem("pawgoSelectedPetId", String(petId));
+
+  if (typeof showScreen === "function") showScreen("screen-pet-settings");
+});
+
 
   // Form registrar mascota (usa estado interno)
   const formPetRegister = document.getElementById("form-pet-register");
@@ -259,6 +275,7 @@
       }
     });
   }
+
 
   // API pública (para auth.js / navegación)
   window.Pets = { refresh, reset };
