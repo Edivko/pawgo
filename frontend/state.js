@@ -39,6 +39,21 @@ function showScreen(id) {
   ) {
     loadClientReservas();
   }
+  if (
+  id === "screen-notifications" &&
+  typeof renderNotificationsScreen === "function"
+) {
+  renderNotificationsScreen();
+}
+if (id === "screen-profile" && typeof renderProfile === "function") {
+  renderProfile();
+}
+if (id === "screen-home" && window.Pets) {
+  window.Pets.refresh();
+}
+
+
+
 }
 
 
@@ -78,14 +93,6 @@ document.addEventListener("click", (event) => {
   }
 });
 
-// -------- ESTADO GLOBAL --------
-
-// Lista de mascotas (se llenará desde el formulario y en un futuro desde la BD)
-let pets = [];
-
-// Mascota seleccionada para paseo
-let selectedPetId = null;
-
 // Nombre del usuario actual
 let currentUserName = localStorage.getItem("pawgoUserName") || "Usuario";
 
@@ -106,14 +113,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof renderWelcomeName === "function") {
     renderWelcomeName();
   }
-
-  if (typeof renderPets === "function") {
-    renderPets();
-  }
-
   if (typeof initMap === "function") {
     initMap();
   }
 });
-
 

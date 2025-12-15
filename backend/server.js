@@ -12,7 +12,7 @@ app.use(express.json());
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'mauri123', // tu contraseña de MySQL
+  password: 'eduardo*', // tu contraseña de MySQL
   database: 'pawgo',
   port: 3306,
 });
@@ -648,6 +648,81 @@ app.post('/api/reservas', async (req, res) => {
     conn.release();
   }
 });
+
+// ---------- PERFIL (USUARIO + DIRECCIÓN PRINCIPAL) ----------
+app.get('/api/profile/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT
+         u.id_usuario,
+         u.nombre,
+         u.apellidos,
+         u.email,
+         u.telefono,
+         u.rol,
+         u.estado,
+         u.rating_promedio,
+         u.total_servicios,
+         u.fecha_registro,
+
+         d.calle,
+         d.numero_ext,
+         d.numero_int,
+         d.colonia,
+         d.cp,
+         d.latitud,
+         d.longitud,
+         d.es_principal
+       FROM usuarios u
+       LEFT JOIN direcciones d
+         ON d.id_usuario = u.id_usuario
+        AND d.es_principal = 1
+       WHERE u.id_usuario = ?
+       LIMIT 1`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    }
+
+    const r = rows[0];
+
+    // Devolvemos el formato que tu profile.js / UI ya entiende
+    const perfil = {
+      nombres: r.nombre || "",
+      // Si quieres separar apellidos, lo hacemos en frontend; aquí regresamos apellidos completos
+      apellidos: r.apellidos || "",
+      correo: r.email || "",
+      telefono: r.telefono || "",
+
+      calle: r.calle || "",
+      numExt: r.numero_ext || "",
+      numInt: r.numero_int || "",
+      // En tu UI lo llamas "alcaldia", pero en BD es "colonia"
+      alcaldia: r.colonia || "",
+      cp: r.cp || "",
+
+      rol: r.rol,
+      estado: r.estado,
+      rating_promedio: r.rating_promedio,
+      total_servicios: r.total_servicios,
+      fecha_registro: r.fecha_registro,
+
+      latitud: r.latitud,
+      longitud: r.longitud,
+    };
+
+    res.json({ ok: true, perfil });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Error al obtener perfil' });
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`API PAWGO escuchando en http://localhost:${PORT}`);

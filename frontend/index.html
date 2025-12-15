@@ -1,26 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PAWGO</title>
   <link rel="stylesheet" href="styles.css" />
+  
+  <!-- AGREGAR FAVICON (icono en la pestaña) -->
+  <link rel="icon" href="perro.png" type="image/png">
+  
+  <!-- Para que el título aparezca correctamente en dispositivos móviles -->
+  <meta name="apple-mobile-web-app-title" content="PAWGO">
+  <meta name="application-name" content="PAWGO">
 </head>
 <body>
-  
   <div class="app-wrapper">
     <main class="phone-frame">
 
-      <!-- PANTALLA 1: BIENVENIDA -->
-      <section id="screen-welcome" class="screen">
-        <div class="screen-content">
-          <h1 class="app-title app-title-center">PAWGO</h1>
+     <!-- PANTALLA 1: BIENVENIDA -->
+<section id="screen-welcome" class="screen">
+  <div class="screen-content">
+    <h1 class="app-title app-title-center">PAWGO</h1>
 
-          <!-- Logo -->
-          <div class="logo-box">
-            <!-- Reemplaza por tu logo si quieres -->
-            <span class="logo-paws">🐾🐾</span>
-          </div>
+    <!-- Logo - IMAGEN ACTUALIZADA -->
+    <div class="logo-box">
+      <img src="perro.png" alt="PAWGO Logo" class="pawgo-logo">
+    </div>
+
+    <!-- El resto de tu código se mantiene igual... -->
 
           <div class="block">
             <p class="section-title">Iniciar sesión</p>
@@ -195,30 +202,13 @@
       </section>
 
       <!-- PANTALLA 5: HOME / DASHBOARD -->
-      
       <section id="screen-home" class="screen active">
         <header class="screen-header home-header">
           <div class="icon-btn">☰</div>
           <button class="btn-outline-sm" data-next="screen-welcome">
             Salir de la cuenta
           </button>
-          <div class="icon-btn">🔔</div>
-          <!-- SIDEBAR -->
-<div id="sidebar" class="sidebar">
-  <div class="sidebar-header">
-    <h2>PAWGO</h2>
-    <button id="close-sidebar">✖</button>
-  </div>
-
-  <ul class="sidebar-menu">
-    <li data-next="screen-home">🏠 Inicio</li>
-    <li data-next="screen-pet-register">🐶 Registrar mascota</li>
-    <li data-next="screen-schedule-walk">📅 Agendar paseo</li>
-    <li data-next="screen-login">👤 Mi cuenta</li>
-    <li data-next="screen-welcome">🚪 Cerrar sesión</li>
-  </ul>
-</div>
-
+          <div class="icon-btn" data-next="screen-notifications">🔔</div>
         </header>
 
         <div class="screen-content home-content">
@@ -226,7 +216,7 @@
             <h2 class="home-welcome">
               Bienvenido <span id="welcome-username">Usuario</span>
             </h2>
-            <div class="icon-btn person">👤</div>
+<button class="icon-round" data-next="screen-profile">👤</button>
           </div>
 
           <!-- Mascotas -->
@@ -252,7 +242,7 @@
             <input
               type="text"
               id="home-address"
-              value="Colima 242, Roma Norte, Cuauhtémoc, CDMX"
+              value=""
               class="input-line"
             />
             <button id="btn-use-location" class="icon-round">📍</button>
@@ -275,6 +265,7 @@
             </button>
             <button class="icon-round">📅</button>
           </div>
+
                     <!-- Próximos paseos del cliente -->
           <div class="card">
             <h3 class="section-title">Tus próximos paseos</h3>
@@ -530,6 +521,7 @@
           </button>
         </div>
       </section>
+
       <!-- PANTALLA 8: VIP PETS (DETALLE DEL PASEO) -->
       <section id="screen-vip-pets" class="screen">
         <header class="screen-header">
@@ -584,12 +576,39 @@
           </button>
         </div>
       </section>
+      <!-- PANTALLA 10: NOTIFICACIONS-->
+      <section id="screen-notifications" class="screen">
+        <header class="screen-header">
+          <button class="back-btn" data-next="screen-home">←</button>
+          <h1 class="app-title">Notificaciones</h1>
+        </header>
+
+        <div class="screen-content">
+          <div id="notifications-container">
+            <!-- Aquí JS pondrá las notificaciones -->
+          </div>
+        </div>
+      </section>
+      <!-- PANTALLA 11 USUARIOPERFIL -->
+<section id="screen-profile" class="screen">
+  <header class="screen-header">
+    <button class="back-btn" data-next="screen-home">←</button>
+    <h1 class="app-title">Perfil</h1>
+  </header>
+
+  <div class="screen-content">
+    <!-- Aquí se inyecta el perfil según rol -->
+    <div id="profile-container"></div>
+  </div>
+</section>
 
     </main>
   </div>
 
   <!-- JS modular -->
   <script src="state.js"></script>
+  <script src="profile.js"></script>
+  <script src="notifications.js"></script>
   <script src="api.js"></script>
   <script src="auth.js"></script>
   <script src="pets.js"></script>

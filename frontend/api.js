@@ -104,3 +104,11 @@ async function apiSaveCaregiverTarifas(idCuidador, data) {
   });
   return resp.json(); // { ok, message? }
 }
+
+// -------- PERFIL USUARIO (CLIENTE / CUIDADOR) --------
+
+
+async function apiGetProfile(userId) {
+  const resp = await fetch(`${API_URL}/api/profile/${userId}`);
+  return resp.json(); // { ok, perfil }
+}
