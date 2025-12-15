@@ -109,6 +109,11 @@ if (btnRegister2 && formRegister1 && formRegister2) {
       alert(`Registro completado como ${currentUserRole}.`);
       const nextScreen =
         currentUserRole === "cuidador" ? "screen-caregiver-home" : "screen-home";
+        if (window.Pets) {
+  window.Pets.reset();
+  window.Pets.refresh();
+}
+
       goToScreen(nextScreen);
 
     } catch (err) {

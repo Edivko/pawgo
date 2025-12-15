@@ -8,7 +8,7 @@ async function apiRegisterUser(userData) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(userData),
   });
-  return resp.json();  // { ok, userId, nombre, message? }
+  return resp.json(); // { ok, userId, nombre, message? }
 }
 
 async function apiLogin(credentials) {
@@ -17,13 +17,13 @@ async function apiLogin(credentials) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(credentials),
   });
-  return resp.json();  // { ok, userId, nombre, message? }
+  return resp.json(); // { ok, userId, nombre, message? }
 }
 
 // -------- MASCOTAS --------
 async function apiGetMascotas(userId) {
   const resp = await fetch(`${API_URL}/api/mascotas/${userId}`);
-  return resp.json();  // { ok, mascotas: [...] }
+  return resp.json(); // { ok, mascotas: [...] }
 }
 
 async function apiCreatePet(petData) {
@@ -32,7 +32,7 @@ async function apiCreatePet(petData) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(petData),
   });
-  return resp.json();  // { ok, id_mascota, message? }
+  return resp.json(); // { ok, id_mascota, message? }
 }
 
 // -------- RESERVAS (PASEOS) --------
@@ -42,7 +42,7 @@ async function apiCreateReserva(data) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return resp.json();  // { ok, id_reserva, id_disponibilidad, message? }
+  return resp.json(); // { ok, id_reserva, id_disponibilidad, message? }
 }
 
 // -------- CUIDADORES --------
@@ -72,17 +72,13 @@ async function apiGetClientReservas(idCliente) {
 }
 
 async function apiCancelReserva(idReserva, idCliente, motivo) {
-  const resp = await fetch(
-    `${API_URL}/api/reservas/${idReserva}/cancelar`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_cliente: idCliente, motivo }),
-    }
-  );
+  const resp = await fetch(`${API_URL}/api/reservas/${idReserva}/cancelar`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_cliente: idCliente, motivo }),
+  });
   return resp.json(); // { ok, message? }
 }
-
 
 // -------- SERVICIOS --------
 async function apiGetServicios() {
@@ -98,6 +94,45 @@ async function apiGetCaregiverTarifas(idCuidador) {
 
 async function apiSaveCaregiverTarifas(idCuidador, data) {
   const resp = await fetch(`${API_URL}/api/cuidadores/${idCuidador}/tarifas`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return resp.json(); // { ok, message? }
+}
+
+// -------- PERFIL USUARIO (CLIENTE / CUIDADOR) --------
+
+async function apiGetProfile(userId) {
+  const resp = await fetch(`${API_URL}/api/profile/${userId}`);
+  return resp.json(); // { ok, perfil }
+}
+
+// Obtener 1 mascota por id (solo dueño)
+async function apiGetMascotaById(idMascota, idDueno) {
+  const resp = await fetch(
+    `${API_URL}/api/mascota/${encodeURIComponent(
+      idMascota
+    )}?id_dueno=${encodeURIComponent(idDueno)}`
+  );
+  return resp.json(); // { ok, mascota?, message? }
+}
+
+// Actualizar mascota (solo dueño)
+async function apiUpdateMascota(idMascota, payload) {
+  const resp = await fetch(
+    `${API_URL}/api/mascota/${encodeURIComponent(idMascota)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
+  return resp.json(); // { ok, message? }
+}
+// Actualizar perfil usuario (cliente / cuidador)
+async function apiUpdateProfile(userId, data) {
+  const resp = await fetch(`${API_URL}/api/profile/${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
